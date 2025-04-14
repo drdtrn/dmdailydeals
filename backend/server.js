@@ -7,6 +7,7 @@ import passport from "passport";
 import { Strategy } from "passport-local";
 import env from "dotenv";
 import multer from "multer";
+import cors from "cors";
 
 const app = express();
 const port = 3000;
@@ -68,7 +69,15 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
+// CORS
+app.use(cors({
+  origin: "http://localhost:5173"
+}));
 
+// IMG handling
+app.use("/uploads", express.static('uploads'))
+
+// REST
 app.get("/", (req, res) => {
   res.send("YEEEE");
 });
@@ -133,6 +142,16 @@ app.post("/upload", upload.single('filepath') , async (req, res) => {
     res.redirect("/admin")
   }
 })
+
+app.get('/api/products', async (req, res) => {
+  try {
+    const result = await db.query("SELECT * FROM products");
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error"});
+  }
+});
 
 passport.use(new Strategy(async function verify(username, password, cb) {
   // This passport strategy automaticaly catches the input fields on the front end if

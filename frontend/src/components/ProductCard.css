@@ -16,13 +16,23 @@
     height: auto;
   }
   
+  .product-card__title,
   .product-card__description,
   .product-card__price,
   .product-card__brand {
     margin: 0.2rem 0;
     font-size: 1rem;
+    padding: 0 3px;
   }
   
+  .product-card__title {
+    color: rgb(52, 52, 52);
+    font-weight: bold;
+    font-size: 20px;
+    padding: 10px 0;
+    text-transform: uppercase;
+  }
+
   .product-card__brand {
     font-weight: bold;
     text-transform: uppercase;
