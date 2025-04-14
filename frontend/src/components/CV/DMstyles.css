@@ -1,0 +1,504 @@
+html {
+    background-color: #f4f1e8;
+  }
+
+header {
+    margin: 20px 0px;
+    background-color: #9b4819;
+    height: fit-content;
+}
+
+#company-logo {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+}
+
+.com-logo {
+    height: 7em;
+    grid-column-start: 3;
+    grid-column-end: 3;
+}
+
+.first-div {
+    display: flex;
+    flex-direction: column;
+    margin: 10px 50px;
+    height: fit-content;
+}
+
+.first-div-title {
+    font-size: 86.2px;
+    text-align: center;
+    color: #9b4819;
+}
+
+.first-div-content {
+    font-size: 24px;
+    text-align: center;
+    width: 50%;
+    align-self: center;
+}
+
+.hire-me {
+    font-size: 18px;
+    color: #9b4819;
+    text-align: center;
+    margin-top: 10rem;
+}
+
+.hire-me-div {
+    flex: 0.5;
+}
+
+span {
+    color: black;
+}
+
+/* ------------------------------ */
+/* Second div content */
+
+.second-div {
+    background-color: #9b4819;
+    background-image: url(./src/assets/bckg.jpg);
+    height: 50rem;
+    min-height: fit-content;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: 1fr 1fr 1fr;
+}
+
+.cutout {
+    height: 100%;
+    width: 100%;
+    background-color: #9b4819;
+}
+.cutout:hover {
+    opacity: 0;
+}
+.dv1{
+    box-shadow: 3px 3px 7px 3px rgba(0, 0, 0, 0.399);
+}
+.dv2 {
+    opacity: 0;
+}
+.dv3{
+    box-shadow: -3px 3px 7px 3px rgba(0, 0, 0, 0.399);
+}
+.dv4 {
+    opacity: 0;
+}
+.dv5{
+    box-shadow: 3px -3px 7px 3px rgba(0, 0, 0, 0.399);
+    grid-row: span 2;
+}
+.dv6 {
+    opacity: 0;
+}
+.dv7{
+    box-shadow: -3px -3px 7px -3px rgba(0, 0, 0, 0.399);
+}
+
+.dv9 {
+    opacity: 0;
+}
+
+/* --------------------------- */
+
+/* Third div content */
+
+.third-div {
+    display: grid;
+    grid-template-rows: 1fr 1fr;
+    grid-template-columns: 1fr 1fr;
+    height: 50rem;
+    min-height: fit-content;
+}
+
+.profile-picture-div {
+    height: 100%;
+    grid-column-start: 2;
+    grid-row-start: 1;
+    grid-row-end: 3;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.profile-picture {
+    height: 75%;
+    width: 30rem;
+    margin: 0 10px;
+    border: 10px solid #314028;
+    border-radius: 40px;
+}
+
+.name-div {
+    grid-column-start: 1;
+    grid-row-start: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    margin: 15% 0;
+}
+.name-div > h1 {
+    text-align: center;
+    font-size: 58px;
+    color: #9b4819;
+    margin: 0 0 10% 0;
+}
+.name-div > h2 {
+    text-align: center;
+    color: #000000;
+    font-size: 28px;
+    margin: 0 15% 5% 15%;
+}
+
+/* ------------------------------ */
+
+/* Fourth div content */
+
+.fourth-div {
+    height: fit-content;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: 1fr 1fr 1fr;
+}
+
+.background-div {
+    grid-column: span 3;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+}
+.background-div > h1 {
+    font-size: 58px;
+    color: #9b4819;
+    text-align: center;
+}
+
+.certification {
+    grid-row: span 2;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    margin-bottom: 15%;
+}
+a > img {
+    height: 80px;
+    margin-bottom: 20px;
+}
+.certification > h1 {
+    text-align: center;
+    font-size: 30;
+    margin: 0 15% 0 15%;
+}
+.certification > h1 > a {
+    text-align: center;
+    font-size: 30;
+    text-decoration-line: underline;
+}
+.certification > hr {
+    border-top: 2px solid #9b4819;
+    width: 75%;
+}
+.certification > h2 {
+    text-align: center;
+    font-size: 20;
+    margin: 0 15% 0 15%;
+}
+
+/* ------------------------------ */
+
+/* Fifth div content */
+
+.fifth-div {
+    height: fit-content;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    grid-template-rows: 1fr 1fr 1fr 1fr 1fr;
+}
+
+.fifth-div > .background-div {
+    grid-column: span 4;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+}
+
+.p-focus {
+    text-align: center;
+}
+
+.field {
+    grid-row: span 2;
+    grid-column: span 2;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin: 30px 15%;
+}
+
+.field > h1 {
+    text-align: center;
+    font-size: 30;
+    margin: 0 15% 0 15%;
+}
+.field > hr {
+    border-top: 2px solid #9b4819;
+    width: 70%;
+}
+.field > h2 {
+    text-align: center;
+    font-size: 20;
+    margin: 0 15% 0 15%;
+}
+
+.field > img {
+    height: 200px;
+    border-radius: 10px;
+}
+
+
+/* ------------------------------ */
+
+/* Sixth div content */
+
+.sixth-div {
+    height: 50rem;
+    min-height: fit-content;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+}
+
+.sixth-div > .background-div {
+    grid-column: span 2;
+    flex-direction: column;
+    align-items: center;
+}
+
+.sixth-div > .certification {
+    grid-row: span 1;
+}
+
+.sixth-div > .certification > img {
+    height: 300px;
+    width: 400px;
+    border-radius: 10px;
+}
+
+.background-div > h2 {
+    grid-column: span 2;
+}
+
+/* ----------------------------- */
+
+/* Seventh div content */
+
+.seventh-div {
+    height: 50rem;
+    min-height: fit-content;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    margin-bottom: 5%;
+}
+
+.seventh-div > .certification {
+    grid-row: span 1;
+}
+
+.seventh-div > .certification > img {
+    height: 300px;
+    width: 400px;
+    border-radius: 10px;
+}
+
+/* ---------------------------- */
+
+/* Eightth div content */
+
+.eightth-div {
+    background-color: #314028;
+    height: 10rem;
+    min-height: fit-content;
+}
+
+/* ---------------------------- */
+
+/* ninth div content */
+
+.ninth-div {
+    background-color: #9b4819;
+    height: fit-content;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr;
+}
+
+.last-field {
+    /* grid-row: span 2; */
+    height: fit-content;
+    width: 75%;
+    margin: 10%;
+}
+.last-field > h1 {
+    font-size: 48px;
+    color: #f4f1e8;
+}
+.last-field > hr {
+    margin-right: 20%;
+    border: 3px solid #cf7039;
+    border-radius: 10px;
+}
+.last-field > h2 {
+    font-size: 18px;
+    color: #f4f1e8;
+}
+
+a {
+    text-decoration: none;
+    color: #411e0a;
+    font-weight: 900;
+    font-size: 20px;
+}
+
+.contacts {
+    grid-column-start: 2;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    flex-wrap: wrap;
+    align-content: center;
+    margin: 10%;
+}
+
+.email {
+    display: flex;
+}
+
+.phone {
+    display: flex;
+}
+.svg {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-right: 20px;
+}
+svg {
+    width: 50px;
+    height: 50px;
+    fill: #f4f1e8;
+}
+
+.details > h2 {
+    color: #f4f1e8;
+    font-size: 18;
+}
+
+span.carlito-regular {
+    color: #f4f1e8;
+}
+
+/* --------------------------- */
+
+hr.solid {
+    border-top: 2px solid #000000;
+    width: 100px;
+  }
+
+/* ALL FONTS GO HERE */
+
+.radley-regular {
+    font-family: "Radley", serif;
+    font-weight: 400;
+    font-style: normal;
+  }
+  
+.radley-regular-italic {
+    font-family: "Radley", serif;
+    font-weight: 400;
+    font-style: italic;
+  }
+
+.carlito-regular {
+    font-family: "Carlito", sans-serif;
+    font-weight: 400;
+    font-style: normal;
+  }
+  
+.carlito-bold {
+    font-family: "Carlito", sans-serif;
+    font-weight: 700;
+    font-style: normal;
+  }
+  
+.carlito-regular-italic {
+    font-family: "Carlito", sans-serif;
+    font-weight: 400;
+    font-style: italic;
+  }
+  
+.carlito-bold-italic {
+    font-family: "Carlito", sans-serif;
+    font-weight: 700;
+    font-style: italic;
+  }
+  
+/* TO HERE */
+
+@media (max-width: 992px) {
+    .third-div {
+        height: fit-content;
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr 1fr;
+        margin: 5% 0 0 0;
+    }
+
+    .profile-picture-div {
+        grid-column-start: 1;
+        grid-row-start: 1;
+        grid-row-end: 2;
+    }
+
+    .name-div {
+        grid-row-start: 2;
+    }
+
+    .fourth-div {
+        height: fit-content;
+        grid-template-rows: 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+    }
+
+    .fourth-div > .certification {
+        grid-column: span 3;
+    }
+
+    .sixth-div {
+        height: fit-content;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .seventh-div {
+        height: fit-content;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .last-field {
+        grid-column: span 2;
+    }
+
+    .contacts {
+        grid-column: span 2;
+        align-content: flex-start;
+        margin: 10%;
+    }
+
+}
