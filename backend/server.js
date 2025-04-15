@@ -153,6 +153,17 @@ app.get('/api/products', async (req, res) => {
   }
 });
 
+app.get('/api/products/:id', async (req, res) => {
+  try {
+    const paramId = req.params.id;
+    const prod = await db.query("SELECT * FROM products WHERE id=$1", [paramId]);
+    res.json(prod.rows);
+  } catch (err) { 
+    console.log(err)
+    res.status(500).json({error: "server error"})
+  }
+})
+
 passport.use(new Strategy(async function verify(username, password, cb) {
   // This passport strategy automaticaly catches the input fields on the front end if
   // they are named the same as the parameters set on the function (username, passoword).
