@@ -1,39 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import useGetProduct from '../../hooks/useGetProduct';
 import { useParams } from 'react-router-dom';
-import axios from 'axios';
 import './product-page.css'
 
 function ProductPage() {
     // This is used to get the :productId parameter from the URL
     const { productId } = useParams();
-    const [product, setProduct] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-  
-    useEffect(() => {
-      const fetchProduct = async () => {
-        try {
-          // Axios automatically parses JSON
-          const response = await axios.get(`http://localhost:3000/api/products/${productId}`);
-          
-          // Axios wraps the response in a "data" property
-          setProduct(response.data);
-        } catch (err) {
-          // Axios error handling
-          if (err.response) {
-            // Server responded with 4xx/5xx status
-            setError(err.response.data.message || 'Product not found');
-          } else {
-            // Network errors (no response)
-            setError('Network error. Please try again.');
-          }
-        } finally {
-          setLoading(false);
-        }
-      };
-  
-      fetchProduct();
-    }, [productId]);
+
+    const { product, loading, error } = useGetProduct(productId)
 
     if (loading) {
         return <div className="container">Loading product details...</div>;
@@ -46,7 +20,6 @@ function ProductPage() {
     if (!product) {
         return <div className="container">Product not found</div>;
     }
-    console.log(product[0])
 
     return (
         <div className="container cards">
