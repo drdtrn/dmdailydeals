@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import useGetAllProducts from '../../hooks/useGetAllProducts';
 import { Link } from 'react-router-dom';
 import HeroImg from "../../assets/heroimg.jpg";
-import axios from 'axios';
 import Footer from "../Footer/Footer";
 import NavBar from '../Header/NavBar';
 import Hero from './Hero';
@@ -13,20 +13,7 @@ import FeatureCard from './FeatureCard';
 
 function Home() {
 
-    const [products, setProducts] = useState([]);
-  
-    useEffect(() => {
-      const fetchProducts = async () => {
-        try {
-          const response = await axios.get('http://localhost:3000/api/products');
-          setProducts(response.data);
-        } catch (error) {
-          console.error('Error fetching products:', error);
-        }
-      };
-      
-      fetchProducts();
-    }, []);
+  const { products } = useGetAllProducts();
   
       return (
           <div className='main-div'>

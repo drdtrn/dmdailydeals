@@ -7,7 +7,7 @@ function ProductPage() {
     // This is used to get the :productId parameter from the URL
     const { productId } = useParams();
 
-    const { product, loading, error } = useGetProduct(productId)
+    const { product, loading, error } = useGetProduct(productId);
 
     if (loading) {
         return <div className="container">Loading product details...</div>;
