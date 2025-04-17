@@ -1,4 +1,5 @@
 import React, {useState} from "react";
+import { Link } from 'react-router-dom';
 import Menu from "./menu";
 import "./NavBar.css";
 
@@ -16,10 +17,10 @@ function NavBar() {
             <a href="/" className="logo">Logo</a>
 
             <nav className="navbar">
-                <a href="">Home</a>
+                <Link to={`/`} key={0} >Home</Link>
                 <a href="">Portfolio</a>
-                <a href="">All Products</a>
-                <a href="">About Us</a>
+                <Link to={`/allProducts`} key={2} >All Products</Link>
+                <Link to={`/aboutUs`} key={3} >About Us</Link>
             </nav>
         </header>
     )

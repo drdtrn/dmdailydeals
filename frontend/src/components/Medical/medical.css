@@ -24,3 +24,10 @@ h2 {
     align-self: center;
     margin: 40px 0 40px 0;
 }
+
+.link {
+    align-self: center;
+    text-decoration: underline;
+    font-size: 1.3rem;
+    margin-top: 1.5rem;
+}

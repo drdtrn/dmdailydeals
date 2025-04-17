@@ -20,4 +20,6 @@ body {
   align-items: center;
   background-size: cover;
   background-position: center;
+  flex: 1;
+  width: 100%;
 }

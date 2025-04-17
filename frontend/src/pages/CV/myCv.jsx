@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
-import '../../DMstyles.css'
+import './DMstyles.css'
 
-function Body() {
+function myCv() {
     return (
         <body>
         <header>
@@ -186,4 +186,4 @@ function Body() {
     )
 }
 
-export default Body;
+export default myCv;

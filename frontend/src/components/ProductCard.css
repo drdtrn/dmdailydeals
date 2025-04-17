@@ -80,4 +80,14 @@ a:focus {
     color: inherit;
 }
 
+  /* Loading state animation */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  .product-card {
+    animation: fadeIn 0.4s ease-out forwards;
+  }
+
 /* https://codesandbox.io/p/sandbox/vigorous-cdn-ht98nx?file=%2Fsrc%2FProductCard%2FProductCard.js%3A12%2C29 */
