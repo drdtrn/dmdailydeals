@@ -18,7 +18,7 @@ function NavBar() {
 
             <nav className="navbar">
                 <Link to={`/`} key={0} >Home</Link>
-                <a href="">Portfolio</a>
+                <Link to={`/admin`} key={1} >Admin</Link>
                 <Link to={`/allProducts`} key={2} >All Products</Link>
                 <Link to={`/aboutUs`} key={3} >About Us</Link>
             </nav>
