@@ -3,7 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import Home from './components/Medical/Home';
 import Footer from "./components/Footer/Footer"
 import NavBar from './components/Header/NavBar';
-import "./App.css";
+// import "./App.css";
 import ProductPage from './pages/Products/product-page';
 import AllProducts from './pages/allProducts/AllProducts';
 import AboutMe from './pages/aboutUs/aboutUs';
@@ -20,7 +20,7 @@ function App() {
   };
 
   return (
-    <div className="App">
+    <div className="App bg-[#FBFADA]">
       
         <NavBar />
 
@@ -38,7 +38,7 @@ function App() {
 
           <Route path="/aboutUs" element={<AboutMe/>} />
 
-          <Route path="/admin" element={<ExternalRedirect to="http://localhost:3000/controlPanel" />} />
+          <Route path="/admin" element={<ExternalRedirect to="http://192.168.178.172:3000/controlPanel" />} />
 
           <Route path="*" element={<h1>404 Not Found</h1>} />
 

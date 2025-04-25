@@ -13,7 +13,7 @@ function NavBar() {
     //     setCondition(true);
     // }
     return(
-        <header className="header">
+        <header className="header bg-[#12372A]">
             <a href="/" className="logo">Logo</a>
 
             <nav className="navbar">

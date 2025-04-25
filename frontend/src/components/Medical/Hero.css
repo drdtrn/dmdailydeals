@@ -1,20 +1,20 @@
 .hero {
-    width: 100vw;
-    height: 90vh;
+    /* width: 100vw;
+    height: 90vh; */
   
     /* Flexbox stuff */
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    /* display: flex; */
+    /* justify-content: center; */
+    /* align-items: center; */
   
     /* Text styles */
     text-align: center;
     color: white;
   }
 
-  .hero-body {
+  /* .hero-body {
     max-width: 75%;
-  }
+  } */
 
   h1 {
     font-size: 50px;

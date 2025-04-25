@@ -1,6 +1,7 @@
-@import url('https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400;1,700&family=Special+Gothic+Condensed+One&display=swap');
+@import "tailwindcss";
+/* @import url('https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400;1,700&family=Special+Gothic+Condensed+One&display=swap'); */
 
-* {
+/* * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
@@ -22,4 +23,4 @@ body {
   background-position: center;
   flex: 1;
   width: 100%;
-}
+} */

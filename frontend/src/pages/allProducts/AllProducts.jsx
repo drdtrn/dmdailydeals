@@ -2,17 +2,17 @@ import React from 'react';
 import useGetAllProducts from '../../hooks/useGetAllProducts';
 import ProductCard from '../../components/ProductCard';
 import { Link } from 'react-router-dom';
-import './all-products.css';
+// import './all-products.css';
 
 function AllProducts () {
 
     const { products } = useGetAllProducts();
 
     return (
-      <div className="products-grid-container">
-        <h2 className="products-title">Our Products</h2>
+      <div className="bg-rock-200 w-full p-15 flex-row justify-center items-center">
+        <h2 className="text-center font-mono font-extrabold">Our Products</h2>
         
-        <div className="products-grid">
+        <div className="grid w-full grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
         {products.map(
           product => (
             <Link 
@@ -23,7 +23,7 @@ function AllProducts () {
               key={product.id}
               link={product.link}
               title={product.title}
-              image={`http://localhost:3000/uploads/${product.filename}`}
+              image={`http://192.168.178.172:3000/uploads/${product.filename}`}
               brand="DMDailyDeals"
               description={product.description}
             />

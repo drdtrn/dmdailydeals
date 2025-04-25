@@ -24,7 +24,7 @@ function ProductPage() {
     return (
         <div className="container cards">
             <h1 className="pb-2 border-bottom">{product[0].title}</h1>
-            <img src={`http://localhost:3000/uploads/${product[0].filename}`} className="card-img-top" alt={product[0].alttext}/>
+            <img src={`http://192.168.178.172:3000/uploads/${product[0].filename}`} className="card-img-top" alt={product[0].alttext}/>
             <p className="lead mb-4">{product[0].description}</p>
             <a href="#" className="btn btn-primary mt-auto">Buy on Amazon</a>
         </div>

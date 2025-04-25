@@ -71,7 +71,7 @@ app.use(passport.session());
 
 // CORS
 app.use(cors({
-  origin: "http://localhost:5173"
+  origin: "http://192.168.178.172:5173"
 }));
 
 // IMG handling
@@ -169,6 +169,7 @@ passport.use(new Strategy(async function verify(username, password, cb) {
   // they are named the same as the parameters set on the function (username, passoword).
   // BEFORE setting this passport strategy the lines below were located in the /login post route.
   try {
+    // NOTE: instead of db.query use prisma for postgresql
     const checkResponse = await db.query("SELECT username, password FROM admin WHERE username = $1 ", [username]);
     const user = checkResponse.rows[0]
     const checkUsername = user.username;
@@ -207,6 +208,6 @@ passport.deserializeUser((user, cb) => {
   cb(null, user);
 })
 
-app.listen(port, () => {
+app.listen(port, '0.0.0.0', () => {
   console.log(`Server running on port ${port}`);
 });
