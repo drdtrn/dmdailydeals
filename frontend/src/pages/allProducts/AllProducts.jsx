@@ -23,7 +23,7 @@ function AllProducts () {
               key={product.id}
               link={product.link}
               title={product.title}
-              image={`http://192.168.178.172:3000/uploads/${product.filename}`}
+              image={`http://${import.meta.env.VITE_CURRENT_IP}:3000/uploads/${product.filename}`}
               brand="DMDailyDeals"
               description={product.description}
             />

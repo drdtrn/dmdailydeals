@@ -71,7 +71,7 @@ app.use(passport.session());
 
 // CORS
 app.use(cors({
-  origin: "http://192.168.178.172:5173"
+  origin: `http://${process.env.CURRENT_IP}:5173`
 }));
 
 // IMG handling

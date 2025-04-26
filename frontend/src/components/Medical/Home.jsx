@@ -8,20 +8,19 @@ import "./medical.css";
 import svg from "../../assets/ticksvg.svg"
 import FeatureCard from './FeatureCard';
 
-
 function Home() {
 
   const { products } = useGetAllProducts();
   
       return (
-          <div className='main-div'>
+          <div className='flex flex-col items-center'>
   
             <Hero imgSrc = {HeroImg} />
 
-            <div className="container">
+            <div className="flex flex-col">
 
-                <h2 className="#">Why US ?</h2>
-                <div className='sub-container'>
+                <h2 className="text-[min(7vw,50px)] border-b-2 border-t-2 border-solid border-gray-400">Why US ?</h2>
+                <div className='flex m-10 gap-10 p-10 flex-wrap'>
                     <FeatureCard
                         svg={svg}
                         title="Title"
@@ -40,23 +39,24 @@ function Home() {
                 </div>
             </div>
 
-            <hr style={{width:"75%", border:"solid rgba(56, 54, 54, 0.12) 1px", boxShadow:"3px 3px 5px rgba(77, 75, 75, 0.22)", alignSelf:"center", margin:"20px"}}/>
+            <hr style={{width:"80%", border:"solid rgba(56, 54, 54, 0.12) 1px", boxShadow:"3px 3px 5px rgba(77, 75, 75, 0.22)", alignSelf:"center", margin:"20px"}}/>
             
-            <div className="container">
+            <div className="flex flex-col items-center">
 
-                <h2>Products </h2>
-                <div className='sub-container'>
+                <h2 className='text-[min(7vw,50px)] border-b-2 border-t-2 border-solid border-gray-400'>Products </h2>
+                <div className='flex gap-10 p-10'>
                 {products.slice(0, 3).map(
-                    product => (
+                    (product, index) => (
                       <Link 
                       to={`/products/${product.id}`} 
                       key={product.id}
+                      className={index === 2 ? 'hidden lg:block' : ''}
                       >
                         <ProductCard
                         key={product.id}
                         link={product.link}
                         title={product.title}
-                        image={`http://192.168.178.172:3000/uploads/${product.filename}`}
+                        image={`http://${import.meta.env.VITE_CURRENT_IP}:3000/uploads/${product.filename}`}
                         brand="DMDailyDeals"
                         description={product.description}
                       />
@@ -68,6 +68,9 @@ function Home() {
                 </div>
                 <Link className='link' to={`/allProducts`} key={2} >See more...</Link>
             </div>
+                    
+            <hr style={{width:"80%", border:"solid rgba(56, 54, 54, 0.12) 1px", boxShadow:"3px 3px 5px rgba(77, 75, 75, 0.22)", alignSelf:"center", margin:"20px"}}/>
+            
           </div>
 
       )

@@ -4,7 +4,6 @@
     flex-direction: column;
     align-items: center;
     text-align: center;
-    width: 20rem;
     margin: 0 auto;
     background-color: #F8FAE5;
     border-radius: 10px;
@@ -22,14 +21,12 @@
   .product-card__price,
   .product-card__brand {
     margin: 0.2rem 0;
-    font-size: 1rem;
     padding: 0 3px;
   }
   
   .product-card__title {
     color: rgb(52, 52, 52);
     font-weight: bold;
-    font-size: 20px;
     padding: 10px 0;
     text-transform: uppercase;
   }
@@ -90,5 +87,3 @@ a:focus {
   .product-card {
     animation: fadeIn 0.4s ease-out forwards;
   }
-
-/* https://codesandbox.io/p/sandbox/vigorous-cdn-ht98nx?file=%2Fsrc%2FProductCard%2FProductCard.js%3A12%2C29 */

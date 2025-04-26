@@ -11,7 +11,7 @@ function useGetProduct(parameter) {
             const fetchProduct = async () => {
               try {
                 // Axios automatically parses JSON
-                const response = await axios.get(`http://192.168.178.172:3000/api/products/${parameter}`);
+                const response = await axios.get(`http://${import.meta.env.VITE_CURRENT_IP}:3000/api/products/${parameter}`);
                 
                 // Axios wraps the response in a "data" property
                 setProduct(response.data);
