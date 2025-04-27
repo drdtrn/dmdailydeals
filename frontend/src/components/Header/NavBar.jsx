@@ -6,7 +6,7 @@ import "./NavBar.css";
 function NavBar() {
     
     return(
-        <header className="header bg-[#12372A] fixed z-100 top-0 left-0 w-[100%] px-[10%] py-[2vh] lg:py-[2.5vh]">
+        <header className="header flex justify-between items-center bg-[#12372A] fixed z-100 top-0 left-0 w-[100%] px-[10%] py-[2vh] lg:py-[2.5vh]">
             <a href="/" className="logo text-[3rem]">Logo</a>
             
             <nav className="navbar">

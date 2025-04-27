@@ -1,6 +1,6 @@
 import React from 'react';
 import useGetAllProducts from '../../hooks/useGetAllProducts';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import HeroImg from "../../assets/heroimg.jpg";
 import Hero from './Hero';
 import ProductCard from '../ProductCard';
@@ -11,9 +11,10 @@ import FeatureCard from './FeatureCard';
 function Home() {
 
   const { products } = useGetAllProducts();
+  const navigate = useNavigate();
   
       return (
-          <div className='flex flex-col items-center'>
+          <div className='flex flex-col flex-grow items-center'>
   
             <Hero imgSrc = {HeroImg} />
 
@@ -66,7 +67,16 @@ function Home() {
                     }
 
                 </div>
-                <Link className='link' to={`/allProducts`} key={2} >See more...</Link>
+
+                <Link 
+                className='inline-block px-[3vw] py-[1vh] bg-[#436850] text-white font-bold text-[min(1.5vw,20px)] leading-tight uppercase 
+                rounded shadow-md hover:bg-[#43766C] hover:shadow-lg focus:bg-[#12372A] focus:shadow-lg focus:outline-none 
+                focus:ring-0 active:bg-[#12372A] active:shadow-lg transition duration-150 ease-in-out' 
+                to={`/allProducts`} 
+                key={2} >
+                  See more...
+                </Link>
+                
             </div>
                     
             <hr style={{width:"80%", border:"solid rgba(56, 54, 54, 0.12) 1px", boxShadow:"3px 3px 5px rgba(77, 75, 75, 0.22)", alignSelf:"center", margin:"20px"}}/>

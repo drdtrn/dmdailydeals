@@ -67,17 +67,6 @@
     fill: lightgrey;
   }
 
-  a {
-    color: inherit;
-  }
-
-a:visited,
-a:hover,
-a:active,
-a:focus {
-    color: inherit;
-}
-
   /* Loading state animation */
   @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }

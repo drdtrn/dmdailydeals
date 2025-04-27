@@ -19,7 +19,7 @@ function App() {
   };
 
   return (
-    <div className="App bg-[#FBFADA]">
+    <div className="flex flex-col bg-[#FBFADA] min-h-screen">
       
         <NavBar />
 
@@ -45,8 +45,6 @@ function App() {
 
         <Footer />
       
-      
-    
   </div>
   )
 }

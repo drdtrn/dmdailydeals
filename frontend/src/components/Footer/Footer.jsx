@@ -1,5 +1,4 @@
 import React, {useState} from "react";
-import "./footer.css";
 
 function Footer() {
 
@@ -7,7 +6,8 @@ function Footer() {
 
     return (
         
-        <footer id="footer">
+        <footer id="footer" className="flex justify-center h-[7vh] lg:h-[10vh] items-center">
+          
           <div className="footer-div">
             <p >© {currentYear } EXAMPLE , LLC</p>
           </div>
