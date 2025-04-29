@@ -164,6 +164,12 @@ app.post("/update", upload.single('filepath'), async (req, res) => {
 
 });
 
+app.post("/delete", async (req, res) => {
+  const prodId = req.body.id;
+  await db.query(" DELETE FROM products WHERE id=$1", [prodId]);
+  res.redirect("/products");
+});
+
 app.post("/register", async (req, res) => {
   const username = req.body.username;
   const password = req.body.password;

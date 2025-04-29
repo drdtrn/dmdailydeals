@@ -13,28 +13,29 @@
 
         <h1><%= product.title %></h1>
             
-            <form action="/update" method="POST">
-                <div class="form-group">
+        <div class="row">
+            <form action="/update" method="POST" class="ml-5 mr-5">
+                <div class="form-group col-11">
                     <label for="id">ID:</label>
                     <input type="number" class="form-control" name="id" value="<%= product.id %>" readonly>
                 </div>
-                <div class="form-group">
+                <div class="form-group col-11">
                     <label for="title">Title: <%= product.title %></label>
                     <input type="text" class="form-control" name="title">
                 </div>
-                <div class="form-group">
+                <div class="form-group col-11">
                     <label for="description">Description: <%= product.description %></label>
                     <input type="text" class="form-control" name="description">
                 </div>
-                <div class="form-group">
+                <div class="form-group col-11">
                     <label for="alttext">Alt Text: <%= product.alttext %></label>
                     <input type="text" class="form-control" name="alttext">
                 </div>
-                <div class="form-group">
+                <div class="form-group col-11">
                     <label for="keywords">Keywords: <%= product.keywords %></label>
                     <input type="text" class="form-control" name="keywords">
                 </div>
-                <div class="">
+                <div class="form-group col-11">
                     <label for="category" class="">Product Category: <%= product.category %></label>
                     <select 
                         name="category" 
@@ -47,15 +48,24 @@
 
                     </select>
                 </div>
-                <div class="form-group">
+                <div class="form-group col-11">
                     <label for="filepath">Filename (Path): <%= product.filename %></label>
                     <input type="file" class="" name="filepath" value=" ">
                 </div>
-                <div class="form-group">
+                <div class="form-group col-11">
                     <label for="link">Link: <%= product.link %></label>
                     <input type="url" class="form-control" name="link">
                 </div>
-                <button type="submit" class="btn btn-dark">Update</button>
+                <button type="submit" class="btn btn-dark ">Update</button>
+            </form>
+        </div>
+
+            <form action="/delete" method="POST" class="">
+                <!-- <label for="id">ID:</label> -->
+                <div class="row ml-5 mt-2 mb-5">
+                    <input type="number" class="form-control col-2 mr-1" name="id" value="<%= product.id %>" readonly>
+                    <button type="submit" class="btn btn-warning col-2">Delete Product</button>
+                </div>
             </form>
         
 
