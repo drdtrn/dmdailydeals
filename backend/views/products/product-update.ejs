@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+    <head>
+    <meta charset="utf-8">
+    <title>Admin Panel</title>
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css" integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
+    <link rel="stylesheet" href="css/styles.css">
+    </head>
+
+    <body>
+
+        <h1><%= product.title %></h1>
+            
+            <form action="/update" method="POST">
+                <div class="form-group">
+                    <label for="id">ID:</label>
+                    <input type="number" class="form-control" name="id" value="<%= product.id %>" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="title">Title: <%= product.title %></label>
+                    <input type="text" class="form-control" name="title">
+                </div>
+                <div class="form-group">
+                    <label for="description">Description: <%= product.description %></label>
+                    <input type="text" class="form-control" name="description">
+                </div>
+                <div class="form-group">
+                    <label for="alttext">Alt Text: <%= product.alttext %></label>
+                    <input type="text" class="form-control" name="alttext">
+                </div>
+                <div class="form-group">
+                    <label for="keywords">Keywords: <%= product.keywords %></label>
+                    <input type="text" class="form-control" name="keywords">
+                </div>
+                <div class="">
+                    <label for="category" class="">Product Category: <%= product.category %></label>
+                    <select 
+                        name="category" 
+                        id="category" 
+                        class=""
+                    >
+                        <option value="" disabled selected>Select a category</option>
+                        <option value="books">Books</option>
+                        <option value="apparel">Apparel</option>
+
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="filepath">Filename (Path): <%= product.filename %></label>
+                    <input type="file" class="" name="filepath" value=" ">
+                </div>
+                <div class="form-group">
+                    <label for="link">Link: <%= product.link %></label>
+                    <input type="url" class="form-control" name="link">
+                </div>
+                <button type="submit" class="btn btn-dark">Update</button>
+            </form>
+        
+
+
+
+    </body>
+</html>

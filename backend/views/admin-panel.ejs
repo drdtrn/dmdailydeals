@@ -11,44 +11,13 @@
 
     <body>
 
-        <div class="container mt-5">
-            <h1>Admin Panel</h1>
+        <div class="container m-5">
+            <h1 class="">Admin Panel</h1>
             <div class="row">
-                <div class="col-12">
-                    <div class="card">
-                        <div class="card-body">
-                            <!-- Makes POST request to /upload route -->
-                            <form action="/upload" method="POST" enctype="multipart/form-data">
-                                <div class="form-group">
-                                    <label for="title">Title</label>
-                                    <input type="text" class="form-control" name="title">
-                                </div>
-                                <div class="form-group">
-                                    <label for="description">Description</label>
-                                    <input type="text" class="form-control" name="description">
-                                </div>
-                                <div class="form-group">
-                                    <label for="alttext">Alt Text</label>
-                                    <input type="text" class="form-control" name="alttext">
-                                </div>
-                                <div class="form-group">
-                                    <label for="keywords">KeyWords</label>
-                                    <input type="text" class="form-control" name="keywords">
-                                </div>
-                                <div class="form-group">
-                                    <label for="filepath">Filename (Path)</label>
-                                    <input type="file" class="" name="filepath">
-                                </div>
-                                <div class="form-group">
-                                    <label for="link">Link</label>
-                                    <input type="url" class="form-control" name="link">
-                                </div>
-                                <button type="submit" class="btn btn-dark">Upload</button>
-                            </form>
-
-                        </div>
-                    </div>
-                </div>
+                <a class="btn btn-primary col m-2" href="/create" role="button">Add Product</a>
+                <a class="btn btn-primary col m-2" href="/products" role="button">Edit Product</a>
+                <a class="btn btn-primary col m-2" href="#" role="button">Remove Product</a>
+                <a class="btn btn-primary col m-2" href="/register" role="button">Admin Registry</a>
             </div>
         </div>
 </body>

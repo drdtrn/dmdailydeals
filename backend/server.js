@@ -87,7 +87,11 @@ app.get("/admin", (req, res) => {
 });
 
 app.get("/register", (req, res) => {
+if (req.isAuthenticated()) {
   res.render("register.ejs", {error: " "});
+} else {
+  res.redirect("/admin");
+}
 });
 
 app.get("/controlPanel", (req, res) => {
@@ -97,6 +101,67 @@ app.get("/controlPanel", (req, res) => {
   } else {
     res.redirect("/admin");
   }
+});
+
+app.get("/create", (req, res) => {
+  if (req.isAuthenticated()) {
+    res.render("creation-panel.ejs");
+  } else {
+    res.redirect("/admin");
+  }
+});
+
+app.get("/products", async (req, res) => {
+  if (req.isAuthenticated()) {
+
+    const result = await db.query("SELECT * FROM products");
+    const products = result.rows;
+
+    res.render("products/products.ejs", {products: products});
+  } else {
+    res.redirect("/admin");
+  }
+});
+
+app.get("/product/:id", async (req, res) => {
+  if (req.isAuthenticated()) {
+
+    const prodId = req.params.id;
+    const result = await db.query("SELECT * FROM products WHERE id=$1", [prodId]);
+    // res.json(prod.rows);
+    const [product] = result.rows;
+    // console.log(product);
+
+    res.render("products/product-update.ejs", {product});
+  } else {
+    res.redirect("/admin");
+  }
+});
+
+app.post("/update", upload.single('filepath'), async (req, res) => {
+
+  const filteredBody = {};
+  var prodId = 0;
+  for (const key in req.body) {
+    if (req.body[key]) {
+      filteredBody[key] = req.body[key];
+      const column = key;
+      const value = req.body[key];
+      const id = parseInt(req.body.id);
+      prodId = parseInt(req.body.id);
+    };
+  };
+
+  const noIdFilteredBody = delete filteredBody.id;
+  for (const key in filteredBody) {
+    const column = key;
+    const value = filteredBody[key];
+    // console.log(`UPDATE products SET ${column} = ${value} WHERE id=${prodId}`)
+    await db.query(`UPDATE products SET ${column} = '${value}' WHERE id=${prodId}`);
+  };
+
+  res.redirect("/products");
+
 });
 
 app.post("/register", async (req, res) => {
@@ -134,9 +199,11 @@ app.post("/upload", upload.single('filepath') , async (req, res) => {
     const filepath = req.file.filename;
     // console.log(req.file)
     const link = req.body.link;
-    const uploadedProd = await db.query("INSERT INTO products (title, description, alttext, keywords, filename, link) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
-      [title, desc, alttxt, kwd, filepath, link]);
+    const category = req.body.category;
+    const uploadedProd = await db.query("INSERT INTO products (title, description, alttext, keywords, filename, link, category) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *",
+      [title, desc, alttxt, kwd, filepath, link, category]);
     console.log(uploadedProd.rows[0]);
+    alert("Product uploaded successfuly !")
     res.redirect("/controlPanel");
   } else {
     res.redirect("/admin")
@@ -157,6 +224,17 @@ app.get('/api/products/:id', async (req, res) => {
   try {
     const paramId = req.params.id;
     const prod = await db.query("SELECT * FROM products WHERE id=$1", [paramId]);
+    res.json(prod.rows);
+  } catch (err) { 
+    console.log(err)
+    res.status(500).json({error: "server error"})
+  }
+})
+
+app.get('/api/product-category/:category', async (req, res) => {
+  try {
+    const paramCategory = req.params.category;
+    const prod = await db.query("SELECT * FROM products WHERE category=$1", [paramCategory]);
     res.json(prod.rows);
   } catch (err) { 
     console.log(err)
