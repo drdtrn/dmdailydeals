@@ -19,7 +19,7 @@ function App() {
   };
 
   return (
-    <div className="flex flex-col bg-[#FBFADA] min-h-screen">
+    <div className="flex flex-col bg-[#FBFBFB] min-h-screen">
       
         <NavBar />
 

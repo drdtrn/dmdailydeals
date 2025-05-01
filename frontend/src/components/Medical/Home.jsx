@@ -7,11 +7,19 @@ import ProductCard from '../ProductCard';
 import "./medical.css";
 import svg from "../../assets/ticksvg.svg"
 import FeatureCard from './FeatureCard';
+import ShowCategories from './ShowCategories';
+// import useGetCategories from '../../hooks/useGetCategories';
 
 function Home() {
 
   const { products } = useGetAllProducts();
   const navigate = useNavigate();
+
+  const uniqueCatList = [...new Set(
+    products.map(
+    (product) => (product.category)
+  )
+)];
   
       return (
           <div className='flex flex-col flex-grow items-center'>
@@ -42,6 +50,27 @@ function Home() {
 
             <hr style={{width:"80%", border:"solid rgba(56, 54, 54, 0.12) 1px", boxShadow:"3px 3px 5px rgba(77, 75, 75, 0.22)", alignSelf:"center", margin:"20px"}}/>
             
+            <div className="flex flex-row gap-2 w-[80%] align-center justify-center">
+              <button className='mr-auto inline-block px-[1.5vw] py-[1vh] bg-transparent text-black font-bold text-[min(1.5vw,20px)] leading-tight uppercase 
+                rounded shadow-md hover:bg-[#43766C] hover:shadow-lg focus:bg-[#12372A] focus:shadow-lg focus:outline-none 
+                focus:ring-0 active:bg-[#12372A] active:shadow-lg transition duration-150 ease-in-out' >{'<'}</button>
+
+            {uniqueCatList.map(
+              (cat) => (
+                <ShowCategories
+                key={uniqueCatList.indexOf(cat)}
+                category={cat}
+                />
+              )
+            )}
+              <button className='ml-auto inline-block px-[1.5vw] py-[1vh] bg-transparent text-black font-bold text-[min(1.5vw,20px)] leading-tight uppercase 
+                rounded shadow-md hover:bg-[#43766C] hover:shadow-lg focus:bg-[#12372A] focus:shadow-lg focus:outline-none 
+                focus:ring-0 active:bg-[#12372A] active:shadow-lg transition duration-150 ease-in-out' >{'>'}</button>
+                
+            </div>
+
+            <hr style={{width:"80%", border:"solid rgba(56, 54, 54, 0.12) 1px", boxShadow:"3px 3px 5px rgba(77, 75, 75, 0.22)", alignSelf:"center", margin:"20px"}}/>
+
             <div className="flex flex-col items-center">
 
                 <h2 className='text-[min(7vw,50px)] border-b-2 border-t-2 border-solid border-gray-400'>Products </h2>
