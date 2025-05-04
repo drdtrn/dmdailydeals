@@ -1,12 +1,12 @@
-import React, {useState} from "react";
+import React from "react";
 import "../ProductCard.css"
 
 function FeatureCard(props) {
     return (
         <div className="product-card w-auto lg:w-[25vw]" style={{backgroundColor: "inherit", boxShadow: "none"}}>
           <img className="svg" src={props.svg} alt="svg tick" />
-          <p className="product-card__brand text-[min(4vw,30px)]">{props.title}</p>
-          <p className="product-card__description text-[min(3vw,25px)]">{props.description}</p>
+          <p className="product-card__brand text-[2rem] lg:text-[1.5rem]">{props.title}</p>
+          <p className="product-card__description text-[1.5rem] lg:text-[1rem]">{props.description}</p>
         </div>
     )
 }

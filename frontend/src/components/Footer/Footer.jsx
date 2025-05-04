@@ -6,9 +6,9 @@ function Footer() {
 
     return (
         
-        <footer id="footer" className="flex justify-center h-[7vh] lg:h-[10vh] items-center">
+        <footer id="footer" className="flex justify-center h-[7vh] lg:h-[10vh] items-center bg-[#12372A]">
           
-          <div className="footer-div">
+          <div className="footer-div text-white">
             <p >© {currentYear } EXAMPLE , LLC</p>
           </div>
       

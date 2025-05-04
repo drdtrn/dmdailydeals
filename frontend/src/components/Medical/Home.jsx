@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import useGetAllProducts from '../../hooks/useGetAllProducts';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import HeroImg from "../../assets/heroimg.jpg";
 import Hero from './Hero';
 import ProductCard from '../ProductCard';
@@ -8,18 +8,36 @@ import "./medical.css";
 import svg from "../../assets/ticksvg.svg"
 import FeatureCard from './FeatureCard';
 import ShowCategories from './ShowCategories';
-// import useGetCategories from '../../hooks/useGetCategories';
 
 function Home() {
 
   const { products } = useGetAllProducts();
-  const navigate = useNavigate();
 
   const uniqueCatList = [...new Set(
     products.map(
     (product) => (product.category)
-  )
-)];
+    )
+  )];
+
+  const [ indeks, setIndeks ] = useState(0);
+  const maxIndeks = uniqueCatList.length;
+
+  function increaseIndex() {    
+    if (indeks < maxIndeks-1) {
+      setIndeks(indeks + 1);
+    } else {
+      setIndeks(0);
+    }
+  };
+
+  function decreaseIndex() {    
+    if (indeks >= maxIndeks-1) {
+      setIndeks(indeks - 1);
+    } else {
+      setIndeks(maxIndeks-1);
+    }
+    console.log(indeks);
+  };
   
       return (
           <div className='flex flex-col flex-grow items-center'>
@@ -52,20 +70,26 @@ function Home() {
             
             <div className="flex flex-row gap-2 w-[80%] align-center justify-center">
               <button className='mr-auto inline-block px-[1.5vw] py-[1vh] bg-transparent text-black font-bold text-[min(1.5vw,20px)] leading-tight uppercase 
-                rounded shadow-md hover:bg-[#43766C] hover:shadow-lg focus:bg-[#12372A] focus:shadow-lg focus:outline-none 
-                focus:ring-0 active:bg-[#12372A] active:shadow-lg transition duration-150 ease-in-out' >{'<'}</button>
+                rounded shadow-md hover:bg-[#3b3b3b16] hover:shadow-lg focus:bg-transparent focus:shadow-lg focus:outline-none 
+                focus:ring-0 active:bg-[#3b3b3b16] active:shadow-lg transition duration-150 ease-in-out' onClick={decreaseIndex}>{'<'}</button>
 
-            {uniqueCatList.map(
-              (cat) => (
-                <ShowCategories
-                key={uniqueCatList.indexOf(cat)}
-                category={cat}
-                />
-              )
-            )}
+              {/* {uniqueCatList.map(
+                (cat) => (
+                  <ShowCategories
+                  key={uniqueCatList.indexOf(cat)}
+                  category={cat}
+                  />
+                )
+              )} */}
+
+              <ShowCategories
+              key={uniqueCatList.indexOf(uniqueCatList[indeks])}
+              category={uniqueCatList[indeks]}
+              />
+
               <button className='ml-auto inline-block px-[1.5vw] py-[1vh] bg-transparent text-black font-bold text-[min(1.5vw,20px)] leading-tight uppercase 
-                rounded shadow-md hover:bg-[#43766C] hover:shadow-lg focus:bg-[#12372A] focus:shadow-lg focus:outline-none 
-                focus:ring-0 active:bg-[#12372A] active:shadow-lg transition duration-150 ease-in-out' >{'>'}</button>
+                rounded shadow-md hover:bg-[#3b3b3b16] hover:shadow-lg focus:bg-transparent focus:shadow-lg focus:outline-none 
+                focus:ring-0 active:bg-[#3b3b3b16] active:shadow-lg transition duration-150 ease-in-out' onClick={increaseIndex}>{'>'}</button>
                 
             </div>
 
@@ -100,7 +124,7 @@ function Home() {
                 <Link 
                 className='inline-block px-[3vw] py-[1vh] bg-[#436850] text-white font-bold text-[min(1.5vw,20px)] leading-tight uppercase 
                 rounded shadow-md hover:bg-[#43766C] hover:shadow-lg focus:bg-[#12372A] focus:shadow-lg focus:outline-none 
-                focus:ring-0 active:bg-[#12372A] active:shadow-lg transition duration-150 ease-in-out' 
+                focus:ring-0 active:bg-[#12372A] active:shadow-lg transition duration-150 ease-in-out mb-5' 
                 to={`/allProducts`} 
                 key={2} >
                   See more...
@@ -108,7 +132,7 @@ function Home() {
                 
             </div>
                     
-            <hr style={{width:"80%", border:"solid rgba(56, 54, 54, 0.12) 1px", boxShadow:"3px 3px 5px rgba(77, 75, 75, 0.22)", alignSelf:"center", margin:"20px"}}/>
+            {/* <hr style={{width:"80%", border:"solid rgba(56, 54, 54, 0.12) 1px", boxShadow:"3px 3px 5px rgba(77, 75, 75, 0.22)", alignSelf:"center", margin:"20px"}}/> */}
             
           </div>
 
