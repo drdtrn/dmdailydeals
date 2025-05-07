@@ -6,6 +6,7 @@ import NavBar from './components/Header/NavBar';
 import ProductPage from './pages/Products/product-page';
 import AllProducts from './pages/allProducts/AllProducts';
 import AboutMe from './pages/aboutUs/aboutUs';
+import CategoryFilteredProducts from './pages/category/CategoryFilteredProducts';
 
 
 function App() {
@@ -34,6 +35,11 @@ function App() {
           />
 
           <Route path="/allProducts" element={<AllProducts />} />
+
+          <Route 
+            path="/category/:productCategory" 
+            element={<CategoryFilteredProducts />} 
+          />
 
           <Route path="/aboutUs" element={<AboutMe/>} />
 

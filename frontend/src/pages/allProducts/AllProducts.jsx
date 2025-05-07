@@ -9,10 +9,10 @@ function AllProducts () {
     const { products } = useGetAllProducts();
 
     return (
-      <div className="bg-rock-200 w-full p-15 flex-row justify-center items-center">
-        <h2 className="text-center font-mono font-extrabold">Our Products</h2>
+      <div className="bg-rock-200 w-full flex-row justify-center items-center mt-[5rem]">
+        <h2 className="text-center font-mono font-extrabold text-[2rem] lg:text-[2.2rem] p-15 lg:p-5">Our Products</h2>
         
-        <div className="grid w-full grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+        <div className="grid w-full grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10">
         {products.map(
           product => (
             <Link 

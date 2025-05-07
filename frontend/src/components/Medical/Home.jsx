@@ -46,7 +46,7 @@ function Home() {
 
             <div className="flex flex-col">
 
-                <h2 className="text-[min(7vw,50px)] border-b-2 border-t-2 border-solid border-gray-400">Why US ?</h2>
+                <h2 className="text-[min(7vw,50px)] border-b-2 border-t-2 border-solid border-gray-400 text-shadow-xs">Why US ?</h2>
                 <div className='flex m-10 gap-10 p-10 flex-wrap'>
                     <FeatureCard
                         svg={svg}
@@ -66,12 +66,12 @@ function Home() {
                 </div>
             </div>
 
-            <hr style={{width:"80%", border:"solid rgba(56, 54, 54, 0.12) 1px", boxShadow:"3px 3px 5px rgba(77, 75, 75, 0.22)", alignSelf:"center", margin:"20px"}}/>
+            <hr style={{width:"90%", border:"solid rgba(56, 54, 54, 0.12) 1px", boxShadow:"3px 3px 5px rgba(77, 75, 75, 0.22)", alignSelf:"center", margin:"20px"}}/>
             
-            <div className="flex flex-row gap-2 w-[80%] align-center justify-center">
+            <div className="flex flex-row gap-2 w-[90%] align-center justify-center">
               <button className='mr-auto inline-block px-[1.5vw] py-[1vh] bg-transparent text-black font-bold text-[min(1.5vw,20px)] leading-tight uppercase 
                 rounded shadow-md hover:bg-[#3b3b3b16] hover:shadow-lg focus:bg-transparent focus:shadow-lg focus:outline-none 
-                focus:ring-0 active:bg-[#3b3b3b16] active:shadow-lg transition duration-150 ease-in-out' onClick={decreaseIndex}>{'<'}</button>
+                focus:ring-0 active:bg-[#3b3b3b16] active:shadow-lg transition duration-150 ease-in-out text-[min(3vw,40px)]' onClick={decreaseIndex}>{'<'}</button>
 
               {/* {uniqueCatList.map(
                 (cat) => (
@@ -89,15 +89,15 @@ function Home() {
 
               <button className='ml-auto inline-block px-[1.5vw] py-[1vh] bg-transparent text-black font-bold text-[min(1.5vw,20px)] leading-tight uppercase 
                 rounded shadow-md hover:bg-[#3b3b3b16] hover:shadow-lg focus:bg-transparent focus:shadow-lg focus:outline-none 
-                focus:ring-0 active:bg-[#3b3b3b16] active:shadow-lg transition duration-150 ease-in-out' onClick={increaseIndex}>{'>'}</button>
+                focus:ring-0 active:bg-[#3b3b3b16] active:shadow-lg transition duration-150 ease-in-out text-[min(3vw,40px)]' onClick={increaseIndex}>{'>'}</button>
                 
             </div>
 
-            <hr style={{width:"80%", border:"solid rgba(56, 54, 54, 0.12) 1px", boxShadow:"3px 3px 5px rgba(77, 75, 75, 0.22)", alignSelf:"center", margin:"20px"}}/>
+            <hr style={{width:"90%", border:"solid rgba(56, 54, 54, 0.12) 1px", boxShadow:"3px 3px 5px rgba(77, 75, 75, 0.22)", alignSelf:"center", margin:"20px"}}/>
 
             <div className="flex flex-col items-center">
 
-                <h2 className='text-[min(7vw,50px)] border-b-2 border-t-2 border-solid border-gray-400'>Products </h2>
+                <h2 className='text-[min(7vw,50px)] border-b-2 border-t-2 border-solid border-gray-400 text-shadow-xs'>Products </h2>
                 <div className='flex gap-10 p-10'>
                 {products.slice(0, 3).map(
                     (product, index) => (
