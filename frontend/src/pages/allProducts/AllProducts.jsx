@@ -1,10 +1,14 @@
+import { useState } from "react";
 import useGetAllProducts from "../../hooks/useGetAllProducts";
 import ProductCard from "../../components/ProductCard";
 import { Link } from "react-router-dom";
-// import './all-products.css';
+import ProductModal from "../Products/ProductModal";
 
 function AllProducts() {
   const { products } = useGetAllProducts();
+
+  const [isOpen, setIsOpen] = useState(false);
+  const [prodId, setProdId] = useState(1);
 
   return (
     <div className="bg-rock-200 w-full flex-row justify-center items-center mt-[5rem] flex-grow">
@@ -14,19 +18,34 @@ function AllProducts() {
 
       <div className="grid w-full grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10">
         {products.map((product) => (
-          <Link to={`/products/${product.id}`} key={product.id}>
-            <ProductCard
-              key={product.id}
-              link={product.link}
-              title={product.title}
-              image={`http://${import.meta.env.VITE_CURRENT_IP}:3000/uploads/${
-                product.filename
-              }`}
-              brand="DMDailyDeals"
-              description={product.description}
-            />
-          </Link>
+          <div key={product.id} className="flex flex-col">
+            <Link to={`/products/${product.id}`} key={product.id}>
+              <ProductCard
+                link={product.link}
+                title={product.title}
+                image={`http://${
+                  import.meta.env.VITE_CURRENT_IP
+                }:3000/uploads/${product.filename}`}
+                brand="DMDailyDeals"
+                description={product.description}
+              />
+            </Link>
+            {/* The lines below enable opening a modal when the button is clicked */}
+            <button
+              onClick={() => {
+                setIsOpen(true), setProdId(product.id);
+              }}
+              className="m-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 place-self-center"
+            >
+              View more info
+            </button>
+          </div>
         ))}
+        <ProductModal
+          open={isOpen}
+          onClose={() => setIsOpen(false)}
+          productId={prodId}
+        />
       </div>
     </div>
   );

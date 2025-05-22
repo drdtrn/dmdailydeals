@@ -1,4 +1,3 @@
-import React from "react";
 import useGetProduct from "../../hooks/useGetProduct";
 import { useParams } from "react-router-dom";
 
