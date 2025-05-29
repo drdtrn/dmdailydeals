@@ -1,5 +1,7 @@
 import useGetProduct from "../../hooks/useGetProduct";
 import { useParams } from "react-router-dom";
+import MetaTags from "../../components/SEO/MetaTags";
+import { ProductPageSchema } from "../../components/SEO/JsonLd.jsx";
 
 function ProductPage() {
   // This is used to get the :productId parameter from the URL
@@ -20,31 +22,64 @@ function ProductPage() {
   }
 
   return (
-    <div className="flex flex-col items-center pt-[15vh] gap-10 flex-grow mb-5">
-      <h1 className="text-black p-5 text-[min(7vw,50px)]">
-        {product[0].title}
-      </h1>
-      <div className="flex flex-col items-center lg:flex-row-reverse gap-20">
-        <img
-          src={`http://${import.meta.env.VITE_CURRENT_IP}:3000/uploads/${
-            product[0].filename
-          }`}
-          className="w-[100%] lg:w-[60%]"
-          alt={product[0].alttext}
+    <>
+      <MetaTags
+        tabTitle={`${product[0].title} - My Website`}
+        tabDescription={product[0].description}
+        tabKeywords={product[0].keywords}
+        tabCanonicalHref={""}
+        authorName={""}
+        appName={""}
+        tabOgTitle={`${product[0].title} - My Website`}
+        tabOgDescription={product[0].description}
+        tabOgImg={`http://${import.meta.env.VITE_CURRENT_IP}:3000/uploads/${
+          product[0].filename
+        }`}
+        tabOgUrl={""}
+        tabOgType
+        tabOgSitename={""}
+        twitterSummaryCard={product[0].description}
+        twitterTitle={`${product[0].title} - My Website`}
+        twitterDescription={product[0].description}
+        twitterImage={`http://${import.meta.env.VITE_CURRENT_IP}:3000/uploads/${
+          product[0].filename
+        }`}
+      >
+        <ProductPageSchema
+          productImgUrl={`http://${
+            import.meta.env.VITE_CURRENT_IP
+          }:3000/uploads/${product[0].filename}`}
+          productDescription={product[0].description}
+          currency={"EUR"}
+          productPrice={"99.9"}
         />
-        <p className="lead mb-4 text-[min(5vw,20px)] self-end text-end">
-          {product[0].description}
-        </p>
-      </div>
-      <a
-        href="#"
-        className="inline-block px-[3vw] py-[1vh] bg-[#436850] text-white font-bold text-[min(1.5vw,20px)] leading-tight uppercase 
+      </MetaTags>
+      <div className="flex flex-col items-center pt-[15vh] gap-10 flex-grow mb-5">
+        <h1 className="text-black p-5 text-[min(7vw,50px)]">
+          {product[0].title}
+        </h1>
+        <div className="flex flex-col items-center lg:flex-row-reverse gap-20">
+          <img
+            src={`http://${import.meta.env.VITE_CURRENT_IP}:3000/uploads/${
+              product[0].filename
+            }`}
+            className="w-[100%] lg:w-[60%]"
+            alt={product[0].alttext}
+          />
+          <p className="lead mb-4 text-[min(5vw,20px)] self-end text-end">
+            {product[0].description}
+          </p>
+        </div>
+        <a
+          href="#"
+          className="inline-block px-[3vw] py-[1vh] bg-[#436850] text-white font-bold text-[min(1.5vw,20px)] leading-tight uppercase 
                 rounded shadow-md hover:bg-[#43766C] hover:shadow-lg focus:bg-[#12372A] focus:shadow-lg focus:outline-none 
                 focus:ring-0 active:bg-[#12372A] active:shadow-lg transition duration-150 ease-in-out"
-      >
-        Buy on Amazon
-      </a>
-    </div>
+        >
+          Buy on Amazon
+        </a>
+      </div>
+    </>
   );
 }
 
