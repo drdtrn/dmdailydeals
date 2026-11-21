@@ -1,43 +1,37 @@
 import type { CollectionAfterChangeHook, CollectionAfterDeleteHook } from 'payload'
 
-import { revalidatePath, revalidateTag } from 'next/cache'
-
+import { revalidate } from '../../../lib/revalidate'
 import type { Page } from '../../../payload-types'
 
-export const revalidatePage: CollectionAfterChangeHook<Page> = ({
-  doc,
-  previousDoc,
-  req: { payload, context },
-}) => {
-  if (!context.disableRevalidate) {
-    if (doc._status === 'published') {
-      const path = doc.slug === 'home' ? '/' : `/${doc.slug}`
+const pathFor = (slug?: string | null) => (slug === 'home' ? '/' : `/${slug}`)
 
-      payload.logger.info(`Revalidating page at path: ${path}`)
+export const revalidatePage: CollectionAfterChangeHook<Page> = ({ doc, previousDoc, req }) => {
+  if (doc._status === 'published') {
+    req.payload.logger.info(`Revalidating page at path: ${pathFor(doc.slug)}`)
+    revalidate({
+      req,
+      paths: [pathFor(doc.slug)],
+      tags: [`page:${doc.slug}`, 'pages-sitemap', 'sitemap'],
+    })
+  }
 
-      revalidatePath(path)
-      revalidateTag('pages-sitemap', 'max')
-    }
-
-    // If the page was previously published, we need to revalidate the old path
-    if (previousDoc?._status === 'published' && doc._status !== 'published') {
-      const oldPath = previousDoc.slug === 'home' ? '/' : `/${previousDoc.slug}`
-
-      payload.logger.info(`Revalidating old page at path: ${oldPath}`)
-
-      revalidatePath(oldPath)
-      revalidateTag('pages-sitemap', 'max')
-    }
+  // If the page was previously published, we need to revalidate the old path
+  if (previousDoc?._status === 'published' && doc._status !== 'published') {
+    req.payload.logger.info(`Revalidating old page at path: ${pathFor(previousDoc.slug)}`)
+    revalidate({
+      req,
+      paths: [pathFor(previousDoc.slug)],
+      tags: [`page:${previousDoc.slug}`, 'pages-sitemap', 'sitemap'],
+    })
   }
   return doc
 }
 
-export const revalidateDelete: CollectionAfterDeleteHook<Page> = ({ doc, req: { context } }) => {
-  if (!context.disableRevalidate) {
-    const path = doc?.slug === 'home' ? '/' : `/${doc?.slug}`
-    revalidatePath(path)
-    revalidateTag('pages-sitemap', 'max')
-  }
-
+export const revalidateDelete: CollectionAfterDeleteHook<Page> = ({ doc, req }) => {
+  revalidate({
+    req,
+    paths: [pathFor(doc?.slug)],
+    tags: [`page:${doc?.slug}`, 'pages-sitemap', 'sitemap'],
+  })
   return doc
 }

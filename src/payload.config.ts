@@ -5,15 +5,28 @@ import { buildConfig, PayloadRequest } from 'payload'
 import { fileURLToPath } from 'url'
 
 import { Categories } from './collections/Categories'
+import { Clicks } from './collections/Clicks'
+import { Deals } from './collections/Deals'
+import { Drops } from './collections/Drops'
+import { Events } from './collections/Events'
 import { Media } from './collections/Media'
 import { Pages } from './collections/Pages'
 import { Posts } from './collections/Posts'
+import { PriceSnapshots } from './collections/PriceSnapshots'
+import { Stores } from './collections/Stores'
+import { Subscribers } from './collections/Subscribers'
 import { Users } from './collections/Users'
 import { Footer } from './Footer/config'
 import { Header } from './Header/config'
+import { AlwaysOnOffer } from './globals/AlwaysOnOffer'
+import { SiteSettings } from './globals/SiteSettings'
+import { migrations } from './migrations'
 import { plugins } from './plugins'
 import { defaultLexical } from '@/fields/defaultLexical'
 import { getServerSideURL } from './utilities/getURL'
+
+/** True for databases managed by migrations (CI, production). See the `db` config below. */
+const migrationManaged = process.env.PAYLOAD_DB_PUSH === 'false'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -61,10 +74,32 @@ export default buildConfig({
     pool: {
       connectionString: process.env.DATABASE_URL || '',
     },
+    // Schema workflow. Push and migrations must never be mixed on one database:
+    // - Local dev database (default): `push` auto-syncs the schema; migrations never run.
+    // - Migration-managed databases (CI, production, fresh-migration checks): set
+    //   PAYLOAD_DB_PUSH=false. Push is off and, in production (NODE_ENV=production), the committed
+    //   migrations run on startup via `prodMigrations`.
+    // Running `prodMigrations` against a push-managed database makes Payload ask an interactive
+    // "data loss" question (it even hangs `next build`), hence the single switch below.
+    push: !migrationManaged,
+    prodMigrations: migrationManaged ? migrations : undefined,
   }),
-  collections: [Pages, Posts, Media, Categories, Users],
+  collections: [
+    Pages,
+    Posts,
+    Media,
+    Categories,
+    Users,
+    Stores,
+    Deals,
+    Drops,
+    PriceSnapshots,
+    Clicks,
+    Events,
+    Subscribers,
+  ],
   cors: [getServerSideURL()].filter(Boolean),
-  globals: [Header, Footer],
+  globals: [Header, Footer, SiteSettings, AlwaysOnOffer],
   plugins,
   secret: process.env.PAYLOAD_SECRET,
   sharp,

@@ -14,6 +14,14 @@ import { authenticated } from '../access/authenticated'
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
+/**
+ * Absolute directory for uploaded files. In production this is a volume
+ * (PAYLOAD_MEDIA_DIR=/data/media); locally it defaults to `<repo>/media` (gitignored).
+ */
+export const mediaDir = path.resolve(
+  process.env.PAYLOAD_MEDIA_DIR || path.resolve(dirname, '../../media'),
+)
+
 export const Media: CollectionConfig = {
   slug: 'media',
   folders: true,
@@ -40,35 +48,19 @@ export const Media: CollectionConfig = {
     },
   ],
   upload: {
-    // Upload to the public/media directory in Next.js making them publicly accessible even outside of Payload
-    staticDir: path.resolve(dirname, '../../public/media'),
-    adminThumbnail: 'thumbnail',
+    staticDir: mediaDir,
+    adminThumbnail: 'card',
     focalPoint: true,
     imageSizes: [
       {
-        name: 'thumbnail',
-        width: 300,
+        name: 'card',
+        width: 640,
+        height: 480,
+        crop: 'center',
       },
       {
-        name: 'square',
-        width: 500,
-        height: 500,
-      },
-      {
-        name: 'small',
-        width: 600,
-      },
-      {
-        name: 'medium',
-        width: 900,
-      },
-      {
-        name: 'large',
-        width: 1400,
-      },
-      {
-        name: 'xlarge',
-        width: 1920,
+        name: 'hero',
+        width: 1600,
       },
       {
         name: 'og',

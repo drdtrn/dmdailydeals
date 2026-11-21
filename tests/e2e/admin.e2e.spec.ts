@@ -38,4 +38,20 @@ test.describe('Admin Panel', () => {
     const editViewArtifact = page.locator('input[name="title"]')
     await expect(editViewArtifact).toBeVisible()
   })
+
+  test('lists the content collections in the nav and hides clicks', async () => {
+    await page.goto('http://localhost:3000/admin')
+    for (const slug of ['deals', 'drops', 'stores', 'events', 'subscribers', 'price-snapshots']) {
+      await expect(page.locator(`a[href="/admin/collections/${slug}"]`).first()).toBeVisible()
+    }
+    await expect(page.locator('a[href="/admin/collections/clicks"]')).toHaveCount(0)
+  })
+
+  test('can open the deal list and the drop edit form', async () => {
+    // Not /deals/create: drafts-enabled collections create a draft row as soon as that page opens.
+    await page.goto('http://localhost:3000/admin/collections/deals')
+    await expect(page.locator('h1', { hasText: 'Deals' }).first()).toBeVisible()
+    await page.goto('http://localhost:3000/admin/collections/drops/create')
+    await expect(page.locator('#field-picks')).toBeVisible()
+  })
 })

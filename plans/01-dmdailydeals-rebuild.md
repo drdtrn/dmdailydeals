@@ -478,7 +478,7 @@ Also confirm the chosen search API's endpoints, result format, terms and pricing
   - `react-hooks/set-state-in-effect` and `react-hooks/refs` are **temporarily warnings** because of template components. **Phase 4 must set them back to `error`.**
 - **Dev Postgres is on host port 5433.** 5432 is used by another local project.
 - **CI runs integration tests before the build.** Until migrations exist, the dev-mode schema push in those tests creates the tables the build reads. **Phase 2 replaces this with `payload migrate` before the build.**
-- **CI is not verified yet.** `.github/workflows/ci.yml` only runs once `develop` is pushed.
+- **CI is green** on `develop` (first run 44913279816, 2026-11-21).
 - **Playwright 1.63 needs Chromium build 1243.** Run `pnpm exec playwright install chromium` on a new machine.
 - **The template's Dockerfile** (node:22 alpine) is untouched until Phase 9.
 
@@ -509,6 +509,21 @@ Also confirm the chosen search API's endpoints, result format, terms and pricing
 - Don't store raw IPs in `clicks`.
 - Don't put revalidation calls in hooks without try/catch.
 - Don't rely on `overrideAccess` defaults in code that should respect access (pass `overrideAccess: false` where it matters).
+
+**Outcome (2026-11-21): done.** All local checks pass, including CI's exact sequence on a brand-new database (migrate → status → drift check → integration tests → seed → build → e2e). Deviations and notes for later phases:
+- **Push vs migrations is one switch: `PAYLOAD_DB_PUSH=false`.** It means migration-managed (`push: false` plus `prodMigrations`). Unset means local dev push mode. Running `prodMigrations` against a push-managed database asks an interactive "data loss?" question and hangs the build.
+  - **Phase 9: production must set `PAYLOAD_DB_PUSH=false`.**
+- **Migrate before building.** `pnpm build` on an empty migration-managed database races, because every build worker runs the migrations. CI migrates first. Phase 9 must migrate before or outside the image build. Phase 5 should also make the build not need a database.
+- **CI drift check:** `migrate:create --skip-empty` fails the job if the collections changed without a committed migration.
+- **Tests use their own database** (`<DATABASE_URL>_test`). The setup refuses any database name not ending in `_test` outside CI.
+- **`deals.status` uses `enumName: 'enum_deals_lifecycle'`.** Payload's draft `_status` already owns `enum_deals_status`.
+- **Price snapshots** are written only on published saves, on first publish or when price, currency or product key change. They are deduplicated against the newest snapshot. Drafts and autosaves never write.
+- **Deal defaults** (`expiresAt` = next drop, `startsAt`, `priceCheckedAt`) are set in `beforeChange`, because `defaultValue` can't read a global.
+  - `editorNote` (≥140 characters) and `wasPrice > price` are validators, and Payload skips them for draft saves, so they are enforced on publish.
+- **`getNextDropAt(now, settings)` already exists** (in `src/lib/drops/time.ts`, with `nextDropOverride` support) for Phase 3.
+- **Seed** (`pnpm seed`) is dev and test fixture data: `*.example.com` stores and "EXAMPLE COPY" text. It refuses `NODE_ENV=production` unless forced (`SEED_FORCE=1`).
+- **`clicks` is hidden in the admin** (`admin.hidden`), so the Phase 7 click report needs its own view.
+- CI actions bumped to `actions/checkout@v7` and `jdx/mise-action@v5` (both Node 24).
 
 ## Phase 3 — Drop engine and outbound links
 

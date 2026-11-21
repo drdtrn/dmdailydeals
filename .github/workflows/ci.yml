@@ -36,12 +36,16 @@ jobs:
       NEXT_PUBLIC_SERVER_URL: http://localhost:3000
       CRON_SECRET: ci-only-cron-secret
       PREVIEW_SECRET: ci-only-preview-secret
+      # The CI database is managed by migrations only: Payload must never push schema to it.
+      PAYLOAD_DB_PUSH: 'false'
+      # Integration tests run against the same throwaway CI database (it is destroyed after the job).
+      TEST_DATABASE_URL: postgresql://dmdd:dmdd_ci@localhost:5432/dmdailydeals
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Installs the Node and pnpm versions pinned in mise.toml.
-      - uses: jdx/mise-action@v2
+      - uses: jdx/mise-action@v5
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -55,8 +59,24 @@ jobs:
       - name: Format check
         run: pnpm format:check
 
-      # Runs before the build on purpose: until migrations exist (Phase 2), Payload's dev-mode
-      # schema push during the integration tests is what creates the tables the build reads.
+      # Applies the committed migrations to the fresh CI database (push is disabled above).
+      - name: Migrate database
+        run: pnpm payload migrate
+
+      - name: Migration status
+        run: pnpm payload migrate:status
+
+      # Fails if the collections changed without a committed migration: `migrate:create` writes a new
+      # file only when the schema differs from the migrated database.
+      - name: Check migrations are up to date
+        run: |
+          pnpm payload migrate:create ci_drift_check --skip-empty
+          if [ -n "$(git status --porcelain -- src/migrations)" ]; then
+            echo "Schema changed without a migration. Run: pnpm migrate:create <name>" >&2
+            git status --porcelain -- src/migrations >&2
+            exit 1
+          fi
+
       - name: Integration tests
         run: pnpm test:int
 

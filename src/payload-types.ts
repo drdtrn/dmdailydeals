@@ -72,6 +72,13 @@ export interface Config {
     media: Media;
     categories: Category;
     users: User;
+    stores: Store;
+    deals: Deal;
+    drops: Drop;
+    'price-snapshots': PriceSnapshot;
+    clicks: Click;
+    events: Event;
+    subscribers: Subscriber;
     redirects: Redirect;
     'payload-kv': PayloadKv;
     'payload-jobs': PayloadJob;
@@ -91,6 +98,13 @@ export interface Config {
     media: MediaSelect<false> | MediaSelect<true>;
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
+    stores: StoresSelect<false> | StoresSelect<true>;
+    deals: DealsSelect<false> | DealsSelect<true>;
+    drops: DropsSelect<false> | DropsSelect<true>;
+    'price-snapshots': PriceSnapshotsSelect<false> | PriceSnapshotsSelect<true>;
+    clicks: ClicksSelect<false> | ClicksSelect<true>;
+    events: EventsSelect<false> | EventsSelect<true>;
+    subscribers: SubscribersSelect<false> | SubscribersSelect<true>;
     redirects: RedirectsSelect<false> | RedirectsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
@@ -106,10 +120,14 @@ export interface Config {
   globals: {
     header: Header;
     footer: Footer;
+    'site-settings': SiteSetting;
+    'always-on-offer': AlwaysOnOffer;
   };
   globalsSelect: {
     header: HeaderSelect<false> | HeaderSelect<true>;
     footer: FooterSelect<false> | FooterSelect<true>;
+    'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
+    'always-on-offer': AlwaysOnOfferSelect<false> | AlwaysOnOfferSelect<true>;
   };
   locale: null;
   widgets: {
@@ -299,7 +317,7 @@ export interface Media {
   focalX?: number | null;
   focalY?: number | null;
   sizes?: {
-    thumbnail?: {
+    card?: {
       url?: string | null;
       width?: number | null;
       height?: number | null;
@@ -307,39 +325,7 @@ export interface Media {
       filesize?: number | null;
       filename?: string | null;
     };
-    square?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
-    small?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
-    medium?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
-    large?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
-    xlarge?: {
+    hero?: {
       url?: string | null;
       width?: number | null;
       height?: number | null;
@@ -391,10 +377,22 @@ export interface Category {
   id: number;
   title: string;
   /**
+   * Original SEO copy shown at the top of the category hub (a short paragraph or two).
+   */
+  intro?: string | null;
+  /**
    * When enabled, the slug will auto-generate from the title field on save and autosave.
    */
   generateSlug?: boolean | null;
   slug: string;
+  meta?: {
+    title?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (number | null) | Media;
+    description?: string | null;
+  };
   parent?: (number | null) | Category;
   breadcrumbs?:
     | {
@@ -578,6 +576,244 @@ export interface ArchiveBlock {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "stores".
+ */
+export interface Store {
+  id: number;
+  name: string;
+  /**
+   * Bare domain, e.g. example.com
+   */
+  domain: string;
+  logo?: (number | null) | Media;
+  /**
+   * Original copy for the store hub. Do not paste the merchant blurb.
+   */
+  description?: string | null;
+  affiliateProgram:
+    'none' | 'ebay' | 'aliexpress' | 'amazon' | 'skimlinks' | 'sovrn' | 'awin' | 'impact' | 'cj' | 'direct';
+  /**
+   * Switching to Active monetises every existing deal from this store.
+   */
+  affiliateStatus: 'none' | 'pending' | 'active';
+  /**
+   * Outbound link pattern. {url} is the raw product URL, {encodedUrl} is URL-encoded (for network deep links).
+   */
+  linkTemplate: string;
+  /**
+   * When enabled, the slug will auto-generate from the title field on save and autosave.
+   */
+  generateSlug?: boolean | null;
+  slug: string;
+  meta?: {
+    title?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (number | null) | Media;
+    description?: string | null;
+  };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "deals".
+ */
+export interface Deal {
+  id: number;
+  title: string;
+  store: number | Store;
+  category: number | Category;
+  /**
+   * Plain product page URL (no affiliate or tracking parameters).
+   */
+  productUrl: string;
+  image?: (number | null) | Media;
+  price: number;
+  /**
+   * Regular price before the discount.
+   */
+  wasPrice?: number | null;
+  /**
+   * ISO 4217 code, e.g. USD.
+   */
+  currency: string;
+  /**
+   * When you last confirmed this price. Shown as "Price checked <time>". Set automatically when the price changes.
+   */
+  priceCheckedAt?: string | null;
+  /**
+   * Why this is a deal, in your own words (at least 140 characters). Original copy only; do not paste the merchant description.
+   */
+  editorNote: string;
+  couponCode?: string | null;
+  meta?: {
+    title?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (number | null) | Media;
+    description?: string | null;
+  };
+  /**
+   * Lifecycle: expired and sold-out deals keep their page. "Draft" keeps a published deal hidden from the public.
+   */
+  status: 'draft' | 'live' | 'expired' | 'sold-out';
+  /**
+   * Defaults to now.
+   */
+  startsAt?: string | null;
+  /**
+   * Defaults to the next drop time (see Site settings).
+   */
+  expiresAt?: string | null;
+  publishedAt?: string | null;
+  /**
+   * When enabled, the slug will auto-generate from the title field on save and autosave.
+   */
+  generateSlug?: boolean | null;
+  slug: string;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "drops".
+ */
+export interface Drop {
+  id: number;
+  /**
+   * The calendar day of this drop. One drop per day.
+   */
+  date: string;
+  /**
+   * Derived from the date (YYYY-MM-DD).
+   */
+  slug?: string | null;
+  /**
+   * The featured deal. It must not also be one of the picks.
+   */
+  hero: number | Deal;
+  /**
+   * Between 5 and 10 deals, in display order.
+   */
+  picks: (number | Deal)[];
+  /**
+   * Short original intro for the drop page.
+   */
+  intro?: string | null;
+  /**
+   * Computed from the date, drop time and timezone in Site settings.
+   */
+  publishAt?: string | null;
+  status: 'scheduled' | 'live' | 'archived';
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "price-snapshots".
+ */
+export interface PriceSnapshot {
+  id: number;
+  productKey: string;
+  price: number;
+  currency: string;
+  capturedAt: string;
+  source: 'manual' | 'api';
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "clicks".
+ */
+export interface Click {
+  id: number;
+  deal: number | Deal;
+  store: number | Store;
+  at: string;
+  /**
+   * Page the click came from, e.g. /deal/some-slug
+   */
+  fromPath?: string | null;
+  utm?: {
+    source?: string | null;
+    medium?: string | null;
+    campaign?: string | null;
+    content?: string | null;
+    term?: string | null;
+  };
+  /**
+   * ISO 3166-1 alpha-2 from CF-IPCountry
+   */
+  country?: string | null;
+  isBot?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "events".
+ */
+export interface Event {
+  id: number;
+  name: string;
+  /**
+   * This year's window. Update it each year; the URL stays the same.
+   */
+  startsAt?: string | null;
+  endsAt?: string | null;
+  /**
+   * Original copy for the event hub.
+   */
+  intro?: string | null;
+  deals?: (number | Deal)[] | null;
+  meta?: {
+    title?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (number | null) | Media;
+    description?: string | null;
+  };
+  /**
+   * When enabled, the slug will auto-generate from the title field on save and autosave.
+   */
+  generateSlug?: boolean | null;
+  slug: string;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "subscribers".
+ */
+export interface Subscriber {
+  id: number;
+  email: string;
+  status: 'active' | 'unsubscribed';
+  /**
+   * Which page or call to action the signup came from.
+   */
+  source?: string | null;
+  consentAt: string;
+  /**
+   * Version or wording of the signup consent text shown to the person.
+   */
+  consentText?: string | null;
+  /**
+   * Empty until email delivery (and double opt-in) exists.
+   */
+  confirmedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "redirects".
  */
 export interface Redirect {
@@ -737,6 +973,34 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'users';
         value: number | User;
+      } | null)
+    | ({
+        relationTo: 'stores';
+        value: number | Store;
+      } | null)
+    | ({
+        relationTo: 'deals';
+        value: number | Deal;
+      } | null)
+    | ({
+        relationTo: 'drops';
+        value: number | Drop;
+      } | null)
+    | ({
+        relationTo: 'price-snapshots';
+        value: number | PriceSnapshot;
+      } | null)
+    | ({
+        relationTo: 'clicks';
+        value: number | Click;
+      } | null)
+    | ({
+        relationTo: 'events';
+        value: number | Event;
+      } | null)
+    | ({
+        relationTo: 'subscribers';
+        value: number | Subscriber;
       } | null)
     | ({
         relationTo: 'redirects';
@@ -964,7 +1228,7 @@ export interface MediaSelect<T extends boolean = true> {
   sizes?:
     | T
     | {
-        thumbnail?:
+        card?:
           | T
           | {
               url?: T;
@@ -974,47 +1238,7 @@ export interface MediaSelect<T extends boolean = true> {
               filesize?: T;
               filename?: T;
             };
-        square?:
-          | T
-          | {
-              url?: T;
-              width?: T;
-              height?: T;
-              mimeType?: T;
-              filesize?: T;
-              filename?: T;
-            };
-        small?:
-          | T
-          | {
-              url?: T;
-              width?: T;
-              height?: T;
-              mimeType?: T;
-              filesize?: T;
-              filename?: T;
-            };
-        medium?:
-          | T
-          | {
-              url?: T;
-              width?: T;
-              height?: T;
-              mimeType?: T;
-              filesize?: T;
-              filename?: T;
-            };
-        large?:
-          | T
-          | {
-              url?: T;
-              width?: T;
-              height?: T;
-              mimeType?: T;
-              filesize?: T;
-              filename?: T;
-            };
-        xlarge?:
+        hero?:
           | T
           | {
               url?: T;
@@ -1042,8 +1266,16 @@ export interface MediaSelect<T extends boolean = true> {
  */
 export interface CategoriesSelect<T extends boolean = true> {
   title?: T;
+  intro?: T;
   generateSlug?: T;
   slug?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        image?: T;
+        description?: T;
+      };
   parent?: T;
   breadcrumbs?:
     | T
@@ -1079,6 +1311,151 @@ export interface UsersSelect<T extends boolean = true> {
         createdAt?: T;
         expiresAt?: T;
       };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "stores_select".
+ */
+export interface StoresSelect<T extends boolean = true> {
+  name?: T;
+  domain?: T;
+  logo?: T;
+  description?: T;
+  affiliateProgram?: T;
+  affiliateStatus?: T;
+  linkTemplate?: T;
+  generateSlug?: T;
+  slug?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        image?: T;
+        description?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "deals_select".
+ */
+export interface DealsSelect<T extends boolean = true> {
+  title?: T;
+  store?: T;
+  category?: T;
+  productUrl?: T;
+  image?: T;
+  price?: T;
+  wasPrice?: T;
+  currency?: T;
+  priceCheckedAt?: T;
+  editorNote?: T;
+  couponCode?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        image?: T;
+        description?: T;
+      };
+  status?: T;
+  startsAt?: T;
+  expiresAt?: T;
+  publishedAt?: T;
+  generateSlug?: T;
+  slug?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "drops_select".
+ */
+export interface DropsSelect<T extends boolean = true> {
+  date?: T;
+  slug?: T;
+  hero?: T;
+  picks?: T;
+  intro?: T;
+  publishAt?: T;
+  status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "price-snapshots_select".
+ */
+export interface PriceSnapshotsSelect<T extends boolean = true> {
+  productKey?: T;
+  price?: T;
+  currency?: T;
+  capturedAt?: T;
+  source?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "clicks_select".
+ */
+export interface ClicksSelect<T extends boolean = true> {
+  deal?: T;
+  store?: T;
+  at?: T;
+  fromPath?: T;
+  utm?:
+    | T
+    | {
+        source?: T;
+        medium?: T;
+        campaign?: T;
+        content?: T;
+        term?: T;
+      };
+  country?: T;
+  isBot?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "events_select".
+ */
+export interface EventsSelect<T extends boolean = true> {
+  name?: T;
+  startsAt?: T;
+  endsAt?: T;
+  intro?: T;
+  deals?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        image?: T;
+        description?: T;
+      };
+  generateSlug?: T;
+  slug?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "subscribers_select".
+ */
+export interface SubscribersSelect<T extends boolean = true> {
+  email?: T;
+  status?: T;
+  source?: T;
+  consentAt?: T;
+  consentText?: T;
+  confirmedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1239,6 +1616,79 @@ export interface Footer {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "site-settings".
+ */
+export interface SiteSetting {
+  id: number;
+  /**
+   * Daily drop time, 24-hour HH:mm, in the timezone below.
+   */
+  dropTime: string;
+  /**
+   * IANA time zone name, e.g. America/New_York.
+   */
+  timezone: string;
+  /**
+   * Optional: announce a one-off different time for the next drop. Leave empty normally.
+   */
+  nextDropOverride?: string | null;
+  telegramEnabled?: boolean | null;
+  newsletterEnabled?: boolean | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "always-on-offer".
+ */
+export interface AlwaysOnOffer {
+  id: number;
+  title: string;
+  /**
+   * Name of the partner company.
+   */
+  partner: string;
+  /**
+   * Discount code, if any.
+   */
+  code?: string | null;
+  discountPercent?: number | null;
+  /**
+   * Partner landing URL.
+   */
+  url: string;
+  image?: (number | null) | Media;
+  /**
+   * Original content for the /esim landing page.
+   */
+  landingContent?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  meta?: {
+    title?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (number | null) | Media;
+    description?: string | null;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "header_select".
  */
 export interface HeaderSelect<T extends boolean = true> {
@@ -1278,6 +1728,43 @@ export interface FooterSelect<T extends boolean = true> {
               label?: T;
             };
         id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "site-settings_select".
+ */
+export interface SiteSettingsSelect<T extends boolean = true> {
+  dropTime?: T;
+  timezone?: T;
+  nextDropOverride?: T;
+  telegramEnabled?: T;
+  newsletterEnabled?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "always-on-offer_select".
+ */
+export interface AlwaysOnOfferSelect<T extends boolean = true> {
+  title?: T;
+  partner?: T;
+  code?: T;
+  discountPercent?: T;
+  url?: T;
+  image?: T;
+  landingContent?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        image?: T;
+        description?: T;
       };
   updatedAt?: T;
   createdAt?: T;
