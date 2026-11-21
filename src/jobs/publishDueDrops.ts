@@ -13,7 +13,7 @@ export const FOLLOW_UP_QUEUE = 'default'
  *
  * Idempotent: it only touches rows that still match (scheduled drops that are due, live deals that
  * are past `expiresAt`), so a second or concurrent run finds nothing, changes nothing and queues
- * nothing. The follow-ups (`revalidateDrop`, `pingIndexNow`) are queued only after something changed.
+ * nothing. The follow-ups (`revalidateDrop`, `pingIndexNow`, `postDropToTelegram`) are queued only after something changed.
  *
  * Bulk writes use `disableRevalidate`: revalidation is done once, by `revalidateDrop`.
  */
@@ -147,8 +147,17 @@ export const publishDueDrops: TaskConfig<'publishDueDrops'> = {
           req,
         })
         queuedFollowUps++
-        // Extension point (Phase 7): queue `postDropToTelegram` here, gated by
-        // site-settings.telegramEnabled. Deferred: `sendDropNewsletter` once delivery is chosen.
+        // Always queued: the task itself no-ops (successfully) without the env vars or with the
+        // site-settings toggle off, so switching it on before the job runs is enough. It stores
+        // its message ids on the drop, so a re-queued job never posts twice.
+        await payload.jobs.queue({
+          task: 'postDropToTelegram',
+          queue: FOLLOW_UP_QUEUE,
+          input: { dropId: Number(published.id) },
+          req,
+        })
+        queuedFollowUps++
+        // Deferred: `sendDropNewsletter` once newsletter delivery is chosen.
       }
 
       payload.logger.info({

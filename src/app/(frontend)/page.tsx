@@ -17,7 +17,9 @@ import { getNextDropTarget, getOffer, getSiteSettings } from '@/lib/data/site'
 import { formatDropAt } from '@/lib/format'
 import { buildOrganization, buildWebSite } from '@/lib/seo/jsonld'
 import { clipDescription, pageMetadata } from '@/lib/seo/meta'
+import { parseSubscribedFlag, SUBSCRIBED_PARAM } from '@/lib/newsletter/copy'
 import { siteOrigin } from '@/lib/seo/site'
+import { safeHttpUrl } from '@/lib/safeUrl'
 import { resolveImage } from '@/lib/media'
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -38,7 +40,11 @@ export async function generateMetadata(): Promise<Metadata> {
   })
 }
 
-export default async function HomePage() {
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}) {
   const [current, nextDropAt, offer, settings] = await Promise.all([
     getCurrentDrop(),
     getNextDropTarget(),
@@ -46,15 +52,24 @@ export default async function HomePage() {
     getSiteSettings(),
   ])
 
+  const subscribed = parseSubscribedFlag((await searchParams)[SUBSCRIBED_PARAM])
   const hero = current?.hero ?? null
   const origin = siteOrigin()
   const jsonLd = <JsonLd data={[buildWebSite(origin), buildOrganization(origin)]} />
   const showNewsletter = settings.newsletterEnabled !== false
+  const telegramUrl = safeHttpUrl(settings.telegramChannelUrl) ?? undefined
 
   const offerAndNewsletter = (
     <div className="mt-12 flex flex-wrap gap-6 md:mt-20">
       <AlwaysOnOffer offer={offer} className="flex-[1_1_420px]" />
-      {showNewsletter ? <NewsletterCta source="home" className="flex-[1_1_420px]" /> : null}
+      {showNewsletter ? (
+        <NewsletterCta
+          source="home"
+          telegramUrl={telegramUrl}
+          initialStatus={subscribed}
+          className="flex-[1_1_420px]"
+        />
+      ) : null}
     </div>
   )
 

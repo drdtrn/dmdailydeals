@@ -3,6 +3,7 @@ import type { GlobalAfterChangeHook, GlobalConfig } from 'payload'
 import { anyone } from '../access/anyone'
 import { authenticated } from '../access/authenticated'
 import { isValidDropTime, isValidTimeZone } from '../lib/drops/time'
+import { safeHttpUrl } from '../lib/safeUrl'
 import { revalidate } from '../lib/revalidate'
 
 const revalidateSiteSettings: GlobalAfterChangeHook = ({ doc, req }) => {
@@ -51,6 +52,23 @@ export const SiteSettings: GlobalConfig = {
       type: 'checkbox',
       defaultValue: false,
       label: 'Post drops to Telegram',
+      admin: {
+        description:
+          'Also needs TELEGRAM_BOT_TOKEN and TELEGRAM_CHANNEL_ID in the environment (see the README).',
+      },
+    },
+    {
+      name: 'telegramChannelUrl',
+      type: 'text',
+      label: 'Telegram channel URL',
+      admin: {
+        description:
+          'Public link shown on the signup box, e.g. https://t.me/dmdailydeals. Leave empty to hide it.',
+      },
+      validate: (value: string | null | undefined) =>
+        !value || safeHttpUrl(value)
+          ? true
+          : 'Use a full http(s) URL, e.g. https://t.me/dmdailydeals',
     },
     {
       name: 'newsletterEnabled',

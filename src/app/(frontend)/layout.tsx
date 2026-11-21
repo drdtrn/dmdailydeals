@@ -3,6 +3,7 @@ import { Bodoni_Moda, DM_Sans } from 'next/font/google'
 import { cookies, draftMode } from 'next/headers'
 import React from 'react'
 
+import { UmamiScript } from '@/components/analytics/Umami'
 import { AdminBar } from '@/components/AdminBar'
 import { Footer } from '@/components/layout/Footer'
 import { Header } from '@/components/layout/Header'
@@ -60,6 +61,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           {children}
         </main>
         <Footer />
+        <UmamiScript />
       </body>
     </html>
   )

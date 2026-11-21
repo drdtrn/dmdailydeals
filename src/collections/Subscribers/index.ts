@@ -1,6 +1,26 @@
-import type { CollectionConfig } from 'payload'
+import type { CollectionConfig, PayloadHandler } from 'payload'
 
 import { authenticated } from '../../access/authenticated'
+import { subscribersCsv } from '../../lib/newsletter/csv'
+
+/** GET /api/subscribers/export: the whole list as CSV. Logged-in users only. */
+export const exportSubscribers: PayloadHandler = async (req) => {
+  if (!req.user) {
+    return Response.json(
+      { error: 'Unauthorized' },
+      { status: 401, headers: { 'Cache-Control': 'no-store' } },
+    )
+  }
+  const csv = await subscribersCsv(req.payload)
+  const day = new Date().toISOString().slice(0, 10)
+  return new Response(csv, {
+    headers: {
+      'Content-Type': 'text/csv; charset=utf-8',
+      'Content-Disposition': `attachment; filename="subscribers-${day}.csv"`,
+      'Cache-Control': 'no-store',
+    },
+  })
+}
 
 /**
  * Our own newsletter list. No public access at all: signups are written server-side.
@@ -15,9 +35,13 @@ export const Subscribers: CollectionConfig = {
     update: authenticated,
   },
   admin: {
-    defaultColumns: ['email', 'status', 'source', 'consentAt'],
+    defaultColumns: ['email', 'status', 'source', 'consentAt', 'createdAt'],
     useAsTitle: 'email',
+    components: {
+      beforeList: ['@/components/admin/ExportSubscribersButton#ExportSubscribersButton'],
+    },
   },
+  endpoints: [{ path: '/export', method: 'get', handler: exportSubscribers }],
   fields: [
     {
       name: 'email',

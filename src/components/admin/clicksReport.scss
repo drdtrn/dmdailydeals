@@ -1,0 +1,35 @@
+.clicks-report {
+  &__window {
+    margin-top: calc(var(--base) * 2);
+  }
+
+  &__range,
+  &__bots {
+    color: var(--theme-elevation-600);
+  }
+
+  &__table {
+    width: 100%;
+    margin: var(--base) 0;
+    border-collapse: collapse;
+
+    caption {
+      text-align: left;
+      font-weight: 600;
+      padding-bottom: calc(var(--base) / 2);
+    }
+
+    th,
+    td {
+      text-align: left;
+      padding: calc(var(--base) / 3) calc(var(--base) / 2);
+      border-bottom: 1px solid var(--theme-elevation-150);
+    }
+
+    .is-num {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      width: 7rem;
+    }
+  }
+}

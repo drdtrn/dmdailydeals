@@ -141,6 +141,7 @@ export interface Config {
       publishDueDrops: TaskPublishDueDrops;
       revalidateDrop: TaskRevalidateDrop;
       pingIndexNow: TaskPingIndexNow;
+      postDropToTelegram: TaskPostDropToTelegram;
       schedulePublish: TaskSchedulePublish;
       inline: {
         input: unknown;
@@ -713,6 +714,14 @@ export interface Drop {
    * Computed from the date, drop time and timezone in Site settings.
    */
   publishAt?: string | null;
+  /**
+   * Written by the postDropToTelegram job so a retry never posts twice. Do not edit.
+   */
+  telegram?: {
+    photoMessageId?: number | null;
+    listMessageId?: number | null;
+    postedAt?: string | null;
+  };
   status: 'scheduled' | 'live' | 'archived';
   updatedAt: string;
   createdAt: string;
@@ -912,7 +921,8 @@ export interface PayloadJob {
     | {
         executedAt: string;
         completedAt: string;
-        taskSlug: 'inline' | 'publishDueDrops' | 'revalidateDrop' | 'pingIndexNow' | 'schedulePublish';
+        taskSlug:
+          'inline' | 'publishDueDrops' | 'revalidateDrop' | 'pingIndexNow' | 'postDropToTelegram' | 'schedulePublish';
         taskID: string;
         input?:
           | {
@@ -945,7 +955,9 @@ export interface PayloadJob {
         id?: string | null;
       }[]
     | null;
-  taskSlug?: ('inline' | 'publishDueDrops' | 'revalidateDrop' | 'pingIndexNow' | 'schedulePublish') | null;
+  taskSlug?:
+    | ('inline' | 'publishDueDrops' | 'revalidateDrop' | 'pingIndexNow' | 'postDropToTelegram' | 'schedulePublish')
+    | null;
   queue?: string | null;
   waitUntil?: string | null;
   processing?: boolean | null;
@@ -1394,6 +1406,13 @@ export interface DropsSelect<T extends boolean = true> {
   picks?: T;
   intro?: T;
   publishAt?: T;
+  telegram?:
+    | T
+    | {
+        photoMessageId?: T;
+        listMessageId?: T;
+        postedAt?: T;
+      };
   status?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -1647,7 +1666,14 @@ export interface SiteSetting {
    * Optional: announce a one-off different time for the next drop. Leave empty normally.
    */
   nextDropOverride?: string | null;
+  /**
+   * Also needs TELEGRAM_BOT_TOKEN and TELEGRAM_CHANNEL_ID in the environment (see the README).
+   */
   telegramEnabled?: boolean | null;
+  /**
+   * Public link shown on the signup box, e.g. https://t.me/dmdailydeals. Leave empty to hide it.
+   */
+  telegramChannelUrl?: string | null;
   newsletterEnabled?: boolean | null;
   updatedAt?: string | null;
   createdAt?: string | null;
@@ -1775,6 +1801,7 @@ export interface SiteSettingsSelect<T extends boolean = true> {
   timezone?: T;
   nextDropOverride?: T;
   telegramEnabled?: T;
+  telegramChannelUrl?: T;
   newsletterEnabled?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -1902,6 +1929,21 @@ export interface TaskPingIndexNow {
     skipped?: string | null;
     submitted?: number | null;
     status?: number | null;
+  };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskPostDropToTelegram".
+ */
+export interface TaskPostDropToTelegram {
+  input: {
+    dropId: number;
+  };
+  output: {
+    skipped?: string | null;
+    photoMessageId?: number | null;
+    listMessageId?: number | null;
+    sent?: number | null;
   };
 }
 /**

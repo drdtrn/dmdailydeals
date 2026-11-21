@@ -21,6 +21,7 @@ import { Header } from './Header/config'
 import { AlwaysOnOffer } from './globals/AlwaysOnOffer'
 import { SiteSettings } from './globals/SiteSettings'
 import { pingIndexNow } from './jobs/pingIndexNow'
+import { postDropToTelegram } from './jobs/postDropToTelegram'
 import { publishDueDrops } from './jobs/publishDueDrops'
 import { revalidateDrop } from './jobs/revalidateDrop'
 import { migrations } from './migrations'
@@ -43,6 +44,14 @@ export default buildConfig({
       // The `BeforeDashboard` component renders the 'welcome' block that you see after logging into your admin panel.
       // Feel free to delete this at any time. Simply remove the line below.
       beforeDashboard: ['@/components/BeforeDashboard'],
+      afterNavLinks: ['@/components/admin/ReportsNavLink#ReportsNavLink'],
+      views: {
+        clicksReport: {
+          Component: '@/components/admin/ClicksReportView#ClicksReportView',
+          path: '/reports/clicks',
+          exact: true,
+        },
+      },
     },
     importMap: {
       baseDir: path.resolve(dirname),
@@ -128,6 +137,6 @@ export default buildConfig({
     // No `autoRun` and no `jobs:handle-schedules`: the only runner is the HTTP endpoint
     // GET /api/payload-jobs/run (cron container / `pnpm cron:dev`), which also handles schedules.
     // Queues: `drops` (publishDueDrops), `default` (follow-ups, schedulePublish), `ai` (Phase 8).
-    tasks: [publishDueDrops, revalidateDrop, pingIndexNow],
+    tasks: [publishDueDrops, revalidateDrop, pingIndexNow, postDropToTelegram],
   },
 })

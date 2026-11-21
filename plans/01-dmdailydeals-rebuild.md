@@ -853,6 +853,30 @@ Searches add ≈ $0.064 per draft (Tavily pay-as-you-go) once past the free tier
 - No `disable_web_page_preview` (removed) and no `reply_markup` on `sendMediaGroup`.
 - Umami's default admin password must not survive the first login.
 
+**Outcome (2026-11-21): done.** All checks pass. CI's full sequence on a fresh database gives 332 integration tests and 94 e2e tests, with 1 skipped (needs `INDEXNOW_KEY`). The build still needs no database. Deviations and notes for later phases:
+- **`/api/subscribe` is a Next route handler.** Its static segment takes precedence over Payload's `/api/[...slug]`.
+  - It accepts JSON and form posts. A form post gets a 303 back to the referring page with `?subscribed=1|error|invalid#newsletter`, and the page renders that result server-side.
+  - A duplicate email is a no-op that still returns success. An unsubscribed address is re-activated with fresh consent.
+  - The honeypot `website` gives a fake success and stores nothing.
+  - The consent wording version is `2026-11-21-v1`, in `src/lib/newsletter/copy.ts`.
+- **Rate limit:** 5 signups per 10 minutes per IP, in memory only. The IP is never stored or logged.
+  - The key is `CF-Connecting-IP`, otherwise the **right-most** `X-Forwarded-For` entry, the hop our proxy appends, since the left-most is client-controlled. A spoofed left-most value was checked and is ignored.
+  - **Phase 9 must lock the origin to Cloudflare**, so `CF-Connecting-IP` can't be forged.
+  - With no IP header at all there is no limit (local dev and e2e).
+- **CSV export:** `GET /api/subscribers/export` needs a logged-in user (anonymous requests get 401) and has an admin "Export CSV" button. Cells that start with `= + - @` get a leading apostrophe so a spreadsheet won't run them as formulas.
+- **`postDropToTelegram`** is queued by `publishDueDrops` every time a drop goes live.
+  - It does nothing unless `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHANNEL_ID` and the site-settings toggle are all set, and the site URL isn't local.
+  - It sends the hero photo, uploaded from disk, with an inline "See today's drop" button, then the picks list with the disclosure line.
+  - Message IDs are stored on the drop (`drops.telegram`), so each message is idempotent on its own.
+  - A 429 with `retry_after` of 15 s or less is waited out once; anything longer fails the job so it retries with exponential backoff. The bot token never appears in errors.
+  - **Never run against the real Telegram API**; the tests mock `fetch`. The first real drop is the real test.
+  - Known gap: if a message is sent but saving its ID fails, a retry re-sends that one message.
+- **Umami:** the script loads only when `NEXT_PUBLIC_UMAMI_SRC` and `NEXT_PUBLIC_UMAMI_WEBSITE_ID` are set at **build time**. `data-domains` defaults to the production host so dev and preview traffic isn't counted. Events tracked: `deal-cta`, `esim-cta` and `newsletter-signup`.
+- **Click report** at `/admin/reports/clicks`, with a nav link.
+  - Clicks per store, per deal and per `fromPath`, over rolling 7- and 30-day windows (UTC, exact bounds shown). Bots are excluded and counted separately.
+  - Built on raw SQL in `getClickReport`, which is tested.
+  - Anonymous visitors get Payload's login redirect; no data is sent.
+
 ## Phase 8 — Blog and AI drafts  (D8–D11)
 
 > **How this serves the primary goal:** guides rank for the informational searches that deal pages can't (how-tos, comparisons, "best time to buy"), they send readers on to today's drop and the category hubs, and they're the kind of page AI assistants cite, as long as each one carries something original.

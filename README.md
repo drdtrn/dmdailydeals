@@ -83,6 +83,37 @@ A scheduled job is queued with `waitUntil` set to the next minute, so a drop goe
 
 `/go/<deal id>` is the outbound redirect: it applies the store's link template (only when the store's affiliate status is `active`), answers `302` with `Cache-Control: no-store`, and logs the click (no IP address, no user agent) after the response.
 
+## Audience and analytics
+
+### Newsletter signups
+
+`NewsletterCta` posts to `/api/subscribe` (a route handler; its static path wins over Payload's `/api/[...slug]` catch-all). Subscribers are **stored in our own database only**: no email is sent yet, and the copy says so.
+
+- JSON bodies get `{ ok: true }` or `{ ok: false, error }`. The no-JS form post (form-encoded) gets a `303` back to the referring page with `?subscribed=1#newsletter` (or `error` / `invalid`); the home page reads the flag on the server.
+- Bots: a filled honeypot field (`website`) gets a fake success and stores nothing. There is a per-IP limit of 5 attempts per 10 minutes, in memory only. The IP comes from `CF-Connecting-IP`, then `X-Forwarded-For`, and is never stored or logged. With neither header there is no limit (local development).
+- A row stores `email` (trimmed, lowercased), `status`, `source`, `consentAt` and `consentText`, the version of the signup wording (`NEWSLETTER_CONSENT_VERSION` in `src/lib/newsletter/copy.ts`; bump it when the wording changes). A duplicate is a no-op that still shows success; an unsubscribed address is re-activated with fresh consent.
+- Export: the subscribers list in the admin has an **Export CSV** button (`GET /api/subscribers/export`, logged-in users only).
+
+### Telegram channel
+
+Each drop is posted when it goes live: the hero photo (uploaded from the media folder, so no public URL is needed) with a "See today's drop" button, then a message listing the picks with the disclosure line. Message ids are stored on the drop, so a retried job never posts twice.
+
+1. Create a public channel (e.g. `@dmdailydeals`) in Telegram.
+2. Create a bot with [@BotFather](https://t.me/BotFather) and copy its token.
+3. Add the bot to the channel as an **administrator** with the "Post messages" right (`can_post_messages`).
+4. Set `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHANNEL_ID` (`@dmdailydeals`) in the environment (see `.env.example`).
+5. In the admin, open **Site settings**: tick **Post drops to Telegram** and set **Telegram channel URL** (`https://t.me/dmdailydeals`) so the signup box links to the channel.
+
+Without both variables, or with the toggle off, or on a localhost site URL, the job succeeds and does nothing. A rate limit (HTTP 429) is waited out when `retry_after` is short and otherwise fails the job so it retries with backoff.
+
+### Umami (analytics)
+
+The script loads only when `NEXT_PUBLIC_UMAMI_SRC` and `NEXT_PUBLIC_UMAMI_WEBSITE_ID` are set, and only counts the production host (`data-domains` defaults to the host of `NEXT_PUBLIC_SERVER_URL`, so dev and preview traffic is ignored). `NEXT_PUBLIC_*` values are baked in at build time. Events: `deal-cta`, `esim-cta` (from `data-umami-event` attributes) and `newsletter-signup`.
+
+### Click report
+
+**Admin > Click report** (`/admin/reports/clicks`) shows outbound clicks per store and per deal, plus the top source pages, for the last 7 and 30 days. Ranges are rolling windows in UTC with the exact start and end printed. Bots are excluded from every figure and counted separately.
+
 ## Database schema workflow
 
 Payload has two ways to change the schema, and they must never be mixed on one database.

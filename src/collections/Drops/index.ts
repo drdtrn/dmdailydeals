@@ -116,6 +116,24 @@ export const Drops: CollectionConfig<'drops'> = {
       },
     },
     {
+      name: 'telegram',
+      type: 'group',
+      admin: {
+        position: 'sidebar',
+        description:
+          'Written by the postDropToTelegram job so a retry never posts twice. Do not edit.',
+      },
+      fields: [
+        { name: 'photoMessageId', type: 'number', admin: { readOnly: true } },
+        { name: 'listMessageId', type: 'number', admin: { readOnly: true } },
+        {
+          name: 'postedAt',
+          type: 'date',
+          admin: { readOnly: true, date: { pickerAppearance: 'dayAndTime' } },
+        },
+      ],
+    },
+    {
       name: 'status',
       type: 'select',
       required: true,

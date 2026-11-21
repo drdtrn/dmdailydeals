@@ -4,11 +4,19 @@ import { Send } from 'lucide-react'
 import React, { useState } from 'react'
 
 import { Button } from '@/components/ui/button'
+import {
+  NEWSLETTER_DESCRIPTION,
+  NEWSLETTER_ERROR,
+  NEWSLETTER_HEADING,
+  NEWSLETTER_INVALID_EMAIL,
+  NEWSLETTER_SUCCESS,
+  type SubscribedFlag,
+} from '@/lib/newsletter/copy'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/utilities/ui'
 
-type Status = 'idle' | 'sending' | 'success' | 'error'
+type Status = 'idle' | 'sending' | 'success' | 'error' | 'invalid'
 
 type Props = {
   /** Which page or placement this form is on; stored with the subscriber (`source`). */
@@ -17,6 +25,11 @@ type Props = {
   telegramUrl?: string
   heading?: string
   description?: string
+  /**
+   * Result of a no-JS signup, read from `?subscribed=` on the server (see `parseSubscribedFlag`).
+   * With JS the form posts in the background and tracks its own state.
+   */
+  initialStatus?: SubscribedFlag | null
   /** Unique per page when the form appears twice (label/input ids). */
   id?: string
   headingLevel?: 'h2' | 'h3'
@@ -25,19 +38,21 @@ type Props = {
 
 /**
  * Email signup. Copy is honest: daily emails have not started, so we promise a heads-up when
- * they do. The form posts to /api/subscribe (built in Phase 7); until then the handler shows
- * a friendly error. Without JS the native form submit goes to the same endpoint.
+ * they do. The wording lives in `lib/newsletter/copy.ts` with its consent version, which is
+ * stored with each signup. With JS the form posts JSON to /api/subscribe; without JS the native
+ * form submit goes to the same endpoint, which redirects back with `?subscribed=` (303).
  */
 export function NewsletterCta({
   source,
   telegramUrl,
-  heading = 'Get the drop by email',
-  description = 'Daily emails haven’t started yet. Join the list and we’ll email you when daily drops start, at 9:00 AM ET. Unsubscribe anytime.',
+  heading = NEWSLETTER_HEADING,
+  description = NEWSLETTER_DESCRIPTION,
+  initialStatus = null,
   id = 'newsletter',
   headingLevel: Heading = 'h2',
   className,
 }: Props) {
-  const [status, setStatus] = useState<Status>('idle')
+  const [status, setStatus] = useState<Status>(initialStatus ?? 'idle')
   const inputId = `${id}-email`
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -55,9 +70,14 @@ export function NewsletterCta({
           website: data.get('website'),
         }),
       })
+      if (response.status === 400) {
+        setStatus('invalid')
+        return
+      }
       if (!response.ok) throw new Error(`HTTP ${response.status}`)
       form.reset()
       setStatus('success')
+      window.umami?.track('newsletter-signup', { source })
     } catch {
       setStatus('error')
     }
@@ -110,14 +130,18 @@ export function NewsletterCta({
           role="status"
           className={cn(
             'mt-3 min-h-5 text-sm',
-            status === 'error' ? 'text-destructive' : 'text-soft-foreground',
+            status === 'error' || status === 'invalid'
+              ? 'text-destructive'
+              : 'text-soft-foreground',
           )}
         >
           {status === 'success'
-            ? 'You are on the list. We will email you when daily drops start.'
-            : status === 'error'
-              ? 'We could not add you just now. Please try again later.'
-              : ''}
+            ? NEWSLETTER_SUCCESS
+            : status === 'invalid'
+              ? NEWSLETTER_INVALID_EMAIL
+              : status === 'error'
+                ? NEWSLETTER_ERROR
+                : ''}
         </p>
       </form>
 
