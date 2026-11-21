@@ -10,6 +10,7 @@ import { buttonVariants } from '@/components/ui/button'
 import { getOffer } from '@/lib/data/site'
 import { clipDescription, pageMetadata } from '@/lib/seo/meta'
 import { safeHttpUrl } from '@/lib/safeUrl'
+import { ROOT_CRUMB } from '@/lib/seo/site'
 
 export async function generateMetadata(): Promise<Metadata> {
   const offer = await getOffer()
@@ -32,7 +33,7 @@ export default async function EsimPage() {
   return (
     <div className="container pb-8">
       <PageHeading
-        crumbs={[{ label: 'Home', href: '/' }, { label: 'eSIM' }]}
+        crumbs={[ROOT_CRUMB, { label: 'eSIM' }]}
         eyebrow="The deal that never expires"
         title={offer.title}
       />
@@ -73,7 +74,8 @@ export default async function EsimPage() {
             <div className="mt-6 flex flex-col gap-2.5 md:mt-8">
               <a
                 href={href}
-                rel="sponsored nofollow noopener"
+                rel="sponsored nofollow"
+                data-umami-event="esim-cta"
                 className={buttonVariants({
                   size: 'lg',
                   className: 'w-full md:w-auto md:self-start',

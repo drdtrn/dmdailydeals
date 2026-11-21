@@ -1,13 +1,27 @@
 /**
  * IndexNow helpers (plan §C). Pure: the task does the fetch.
  *
- * The key is public by design. Serving `https://<site>/<key>.txt` (content = the key) comes in
- * Phase 6 (`public/<INDEXNOW_KEY>.txt` or a route); until then pings are rejected by IndexNow with
- * 403, so leave `INDEXNOW_KEY` unset until that file is deployed.
+ * The key is public by design and comes from `INDEXNOW_KEY`, so no key file is committed. The key
+ * file is served by `app/indexnow-key.txt/route.ts` at `/indexnow-key.txt` (content = the key), and
+ * every ping sends that URL as `keyLocation` (IndexNow allows a custom location on the same host;
+ * at the site root it covers every URL we submit).
  */
 
 export const INDEXNOW_ENDPOINT = 'https://api.indexnow.org/indexnow'
 const KEY_RE = /^[a-zA-Z0-9-]{8,128}$/
+
+/** Where the key file is served. */
+export const INDEXNOW_KEY_PATH = '/indexnow-key.txt'
+
+/** Valid IndexNow keys are 8-128 characters of a-z, A-Z, 0-9 and "-". */
+export function isValidIndexNowKey(key: string | undefined | null): key is string {
+  return typeof key === 'string' && KEY_RE.test(key.trim())
+}
+
+/** The body of the key file: the trimmed key, or null when unset or invalid (the route 404s). */
+export function indexNowKeyFile(key: string | undefined | null): string | null {
+  return isValidIndexNowKey(key) ? key.trim() : null
+}
 
 export function isLocalHost(hostname: string): boolean {
   const h = hostname.toLowerCase().replace(/^\[|\]$/g, '')
@@ -43,7 +57,12 @@ export function resolveIndexNowTarget(
   if (isLocalHost(url.hostname)) return { skip: 'site URL is local' }
   const k = key.trim()
   return {
-    target: { host: url.host, origin: url.origin, key: k, keyLocation: `${url.origin}/${k}.txt` },
+    target: {
+      host: url.host,
+      origin: url.origin,
+      key: k,
+      keyLocation: `${url.origin}${INDEXNOW_KEY_PATH}`,
+    },
   }
 }
 

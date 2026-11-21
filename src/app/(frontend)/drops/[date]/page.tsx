@@ -6,12 +6,16 @@ import React from 'react'
 import { DisclosureNote } from '@/components/deals/DisclosureNote'
 import { HeroDeal } from '@/components/deals/HeroDeal'
 import { DealGrid } from '@/components/pages/DealGrid'
+import { JsonLd } from '@/components/seo/JsonLd'
 import { PageHeading, PageSection } from '@/components/pages/PageHeading'
 import { getDropByDate, getDropNeighbours } from '@/lib/data/drops'
 import { parseDropDate } from '@/lib/drops/time'
 import { formatFullDate, formatShortDate } from '@/lib/format'
 import { resolveImage } from '@/lib/media'
+import { buildArticle, buildBreadcrumbList, buildItemList } from '@/lib/seo/jsonld'
 import { pageMetadata } from '@/lib/seo/meta'
+import { ROOT_CRUMB, siteOrigin } from '@/lib/seo/site'
+import { dealHref } from '@/components/deals/dealView'
 
 type Props = { params: Promise<{ date: string }> }
 
@@ -43,11 +47,38 @@ export default async function DropPage({ params }: Props) {
   const { drop, hero, picks, lowest } = found
   const label = formatFullDate(drop.date)
   const isLive = drop.status === 'live'
+  const origin = siteOrigin()
+  const path = `/drops/${date}`
+  const crumbs = [ROOT_CRUMB, { label: 'Drops', href: '/drops' }, { label: date }]
+  const deals = [...(hero ? [hero] : []), ...picks]
+  const description =
+    drop.intro ||
+    (hero
+      ? `The ${label} drop: ${hero.title} plus ${picks.length} more curated deals.`
+      : `The ${label} drop of curated deals.`)
 
   return (
     <div className="container pb-8">
+      <JsonLd
+        data={[
+          buildArticle(origin, {
+            headline: `Deals of ${label}`,
+            description,
+            path,
+            datePublished: drop.publishAt || drop.date,
+            dateModified: drop.updatedAt,
+            image: hero?.image,
+          }),
+          buildBreadcrumbList(origin, crumbs, path),
+          buildItemList(
+            origin,
+            `Deals of ${label}`,
+            deals.map((deal) => dealHref(deal)),
+          ),
+        ]}
+      />
       <PageHeading
-        crumbs={[{ label: 'Home', href: '/' }, { label: 'Drops', href: '/drops' }, { label: date }]}
+        crumbs={crumbs}
         eyebrow={isLive ? 'Today’s drop' : 'Past drop'}
         title={<>Deals of {label}</>}
         lead={drop.intro}

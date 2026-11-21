@@ -7,6 +7,7 @@ import { Pager } from '@/components/pages/Pager'
 import { blogPageHref } from '@/lib/blogHref'
 import { listPosts } from '@/lib/data/content'
 import { pageMetadata } from '@/lib/seo/meta'
+import { ROOT_CRUMB } from '@/lib/seo/site'
 
 export async function generateMetadata(): Promise<Metadata> {
   return pageMetadata({
@@ -24,7 +25,7 @@ export default async function BlogIndexPage() {
     <div className="pb-16">
       <div className="container">
         <PageHeading
-          crumbs={[{ label: 'Home', href: '/' }, { label: 'Blog' }]}
+          crumbs={[ROOT_CRUMB, { label: 'Blog' }]}
           title="Blog"
           lead="Practical guides on eSIMs, travel, home and tech, to help you decide what is worth buying."
         />

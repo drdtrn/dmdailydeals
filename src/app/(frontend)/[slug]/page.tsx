@@ -9,12 +9,18 @@ import { DisclosureNote } from '@/components/deals/DisclosureNote'
 import { LivePreviewListener } from '@/components/LivePreviewListener'
 import { DealGrid } from '@/components/pages/DealGrid'
 import { PageHeading } from '@/components/pages/PageHeading'
+import { dealHref } from '@/components/deals/dealView'
+import { JsonLd } from '@/components/seo/JsonLd'
 import { PayloadRedirects } from '@/components/PayloadRedirects'
 import { RenderHero } from '@/heros/RenderHero'
 import { getEventBySlug, getPageBySlug } from '@/lib/data/content'
 import { getLowestFlags } from '@/lib/data/deals'
 import { formatDateRange } from '@/lib/format'
+import { newestUpdatedAt } from '@/lib/freshness'
+import { isEventIndexable } from '@/lib/seo/indexing'
+import { buildBreadcrumbList, buildCollectionPage, buildOrganization } from '@/lib/seo/jsonld'
 import { clipDescription, pageMetadata } from '@/lib/seo/meta'
+import { ROOT_CRUMB, siteOrigin } from '@/lib/seo/site'
 import { generateMeta } from '@/utilities/generateMeta'
 
 /**
@@ -65,6 +71,7 @@ export default async function Page({ params: paramsPromise }: Args) {
       <article className="pb-24">
         {/* Allows redirects for valid pages too */}
         <PayloadRedirects disableNotFound url={url} />
+        {decodedSlug === 'about' ? <JsonLd data={buildOrganization(siteOrigin())} /> : null}
         {draft && <LivePreviewListener />}
 
         {/* The page title is the h1. Image heroes still render above the content. */}
@@ -84,13 +91,27 @@ export default async function Page({ params: paramsPromise }: Args) {
     const { event, deals } = found
     const lowest = await getLowestFlags(deals)
     const window = formatDateRange(event.startsAt, event.endsAt)
+    const origin = siteOrigin()
+    const crumbs = [ROOT_CRUMB, { label: event.name }]
     return (
       <div className="container pb-8">
+        <JsonLd
+          data={[
+            buildBreadcrumbList(origin, crumbs, url),
+            buildCollectionPage(origin, {
+              name: `${event.name} deals`,
+              description: event.intro,
+              path: url,
+              itemPaths: deals.map((deal) => dealHref(deal)),
+            }),
+          ]}
+        />
         <PageHeading
-          crumbs={[{ label: 'Home', href: '/' }, { label: event.name }]}
+          crumbs={crumbs}
           eyebrow={window ? `Event · ${window}` : 'Event'}
           title={`${event.name} deals`}
           lead={event.intro}
+          updatedAt={newestUpdatedAt(deals, event.updatedAt)}
         />
         {deals.length > 0 ? (
           <>
@@ -131,6 +152,8 @@ export async function generateMetadata({ params: paramsPromise }: Args): Promise
         `Our picks for ${event.name}: ${formatDateRange(event.startsAt, event.endsAt)}.`,
       path: `/${decodedSlug}`,
       image: event.meta?.image,
+      // Outside its window, an event hub needs evergreen original copy to stay in the index.
+      noindex: !isEventIndexable(event),
     })
   }
   return {}

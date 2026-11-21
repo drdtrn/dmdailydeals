@@ -13,8 +13,6 @@ public/media/
 # Uploaded media (default PAYLOAD_MEDIA_DIR)
 /media/
 
-public/robots.txt
-public/sitemap*.xml
 
 
 # Playwright

@@ -733,6 +733,34 @@ Also confirm the chosen search API's endpoints, result format, terms and pricing
 - No meta keywords.
 - Never set Cloudflare Training to **Block**.
 
+**Outcome (2026-11-21): done.** All checks pass. CI's full sequence on a fresh database passes: 259 integration tests, 85 e2e tests, and 1 test skipped because it needs `INDEXNOW_KEY`. The build still needs no database. Deviations and notes for later phases:
+- **Sitemap index.** Next 16.4.6 serves only `/sitemap/<id>.xml` when `generateSitemaps` is used; it creates no index. A route at `/sitemap.xml` fails the build with "Conflicting route and metadata".
+  - The index lives at `/sitemap-index.xml`, and `next.config.ts` rewrites `/sitemap.xml` to it.
+  - The children are `deals`, `drops`, `hubs`, `pages` and `posts`.
+  - Each child's `lastmod` in the index is the newest `updatedAt` it contains. Empty children are left out.
+- **robots.txt:**
+  - Every named crawler, training crawlers included (D7), plus `*`.
+  - Rules: `Allow: /`, `Allow: /api/media/file/` (deal images must stay crawlable), then `Disallow` for `/go/`, `/admin`, `/api/`, `/next/` and `/styleguide`.
+  - It's static at build time, so `NEXT_PUBLIC_SERVER_URL` must be the production URL when the image is built.
+- **`htmlLimitedBots`** is Next's default regex, copied from `node_modules/next/dist/shared/lib/router/utils/html-bots.js`, plus 17 AI crawler names. **Re-copy the default whenever Next is upgraded.**
+- **JSON-LD is rendered by the page components** (raw HTML `<body>`, as the Next docs recommend).
+  - Live deal: `Product` + one `Offer`.
+  - Expired or sold-out deal: no `Product`.
+  - Drops: `Article` + `ItemList`.
+  - Hubs: `CollectionPage`.
+  - `/` and `/about`: `Organization`; `/` also has `WebSite`.
+  - Every page except `/` also gets `BreadcrumbList`.
+- **Thin hubs** (`src/lib/seo/indexing.ts`):
+  - A store is noindex with fewer than 3 visible deals.
+  - An event is indexable from 21 days before `startsAt` until `endsAt`, or always when its intro is at least 140 characters.
+- **IndexNow:** the key comes from env and is served at `/indexnow-key.txt`. `keyLocation` is set to that URL, so no key file is committed.
+- **Theme is now a `dm-theme` cookie**, read by the root layout. `next/script` `beforeInteractive` ran too late and the theme flashed. The cookie means no script, no flash and no React warning.
+- The root breadcrumb is "DMDailyDeals". Deal pages show a `DisclosureNote` above related deals too. The `/esim` CTA has `rel="sponsored nofollow"` and `data-umami-event="esim-cta"`.
+- **Deferred to Phase 10 (needs a public URL):**
+  - Rich Results Test and validator.schema.org.
+  - A real IndexNow 200/202.
+  - Search Console sitemap submission.
+
 ## Phase 7 — Audience and analytics
 
 > **How this serves the primary goal:** newsletter and Telegram subscribers return every day without Google, and analytics plus click logs show which deals and stores work. That data also supports future affiliate applications.

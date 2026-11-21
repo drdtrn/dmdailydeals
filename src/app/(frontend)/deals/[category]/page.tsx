@@ -6,11 +6,16 @@ import { CategoryNav } from '@/components/deals/CategoryNav'
 import { DisclosureNote } from '@/components/deals/DisclosureNote'
 import { DealGrid } from '@/components/pages/DealGrid'
 import { DropRow } from '@/components/pages/DropRow'
+import { JsonLd } from '@/components/seo/JsonLd'
+import { dealHref } from '@/components/deals/dealView'
 import { PageHeading, PageSection } from '@/components/pages/PageHeading'
 import { getLiveDealsByCategory, getLowestFlags } from '@/lib/data/deals'
 import { getDropsForCategory } from '@/lib/data/drops'
 import { getCategoryBySlug } from '@/lib/data/site'
+import { newestUpdatedAt } from '@/lib/freshness'
+import { buildBreadcrumbList, buildCollectionPage } from '@/lib/seo/jsonld'
 import { pageMetadata } from '@/lib/seo/meta'
+import { ROOT_CRUMB, siteOrigin } from '@/lib/seo/site'
 
 type Props = { params: Promise<{ category: string }> }
 
@@ -39,14 +44,29 @@ export default async function CategoryPage({ params }: Props) {
     getDropsForCategory(category.id, category.slug),
   ])
   const lowest = await getLowestFlags(deals)
+  const origin = siteOrigin()
+  const path = `/deals/${category.slug}`
+  const crumbs = [ROOT_CRUMB, { label: category.title }]
 
   return (
     <div className="container pb-8">
+      <JsonLd
+        data={[
+          buildBreadcrumbList(origin, crumbs, path),
+          buildCollectionPage(origin, {
+            name: `${category.title} deals`,
+            description: category.intro,
+            path,
+            itemPaths: deals.map((deal) => dealHref(deal)),
+          }),
+        ]}
+      />
       <PageHeading
-        crumbs={[{ label: 'Home', href: '/' }, { label: category.title }]}
+        crumbs={crumbs}
         eyebrow="Category"
         title={`${category.title} deals`}
         lead={category.intro}
+        updatedAt={newestUpdatedAt(deals, category.updatedAt)}
       />
       <CategoryNav
         activeSlug={category.slug}

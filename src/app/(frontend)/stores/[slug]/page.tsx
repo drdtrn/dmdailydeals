@@ -5,9 +5,15 @@ import React from 'react'
 import { DisclosureNote } from '@/components/deals/DisclosureNote'
 import { DealGrid } from '@/components/pages/DealGrid'
 import { PageHeading, PageSection } from '@/components/pages/PageHeading'
+import { JsonLd } from '@/components/seo/JsonLd'
+import { dealHref } from '@/components/deals/dealView'
 import { getLowestFlags } from '@/lib/data/deals'
 import { getStoreBySlug, getStoreDeals } from '@/lib/data/content'
+import { newestUpdatedAt } from '@/lib/freshness'
+import { isThinStore } from '@/lib/seo/indexing'
+import { buildBreadcrumbList, buildCollectionPage } from '@/lib/seo/jsonld'
 import { pageMetadata } from '@/lib/seo/meta'
+import { ROOT_CRUMB, siteOrigin } from '@/lib/seo/site'
 
 type Props = { params: Promise<{ slug: string }> }
 
@@ -25,6 +31,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       `Current and recent ${store.name} deals we have picked and checked.`,
     path: `/stores/${store.slug}`,
     image: store.meta?.image ?? store.logo,
+    // Fewer than 3 published deals: a thin hub, kept out of the index.
+    noindex: isThinStore(total),
   })
 }
 
@@ -37,14 +45,29 @@ export default async function StorePage({ params }: Props) {
   if (total === 0) notFound()
 
   const lowest = await getLowestFlags([...live, ...recent])
+  const origin = siteOrigin()
+  const path = `/stores/${store.slug}`
+  const crumbs = [ROOT_CRUMB, { label: store.name }]
 
   return (
     <div className="container pb-8">
+      <JsonLd
+        data={[
+          buildBreadcrumbList(origin, crumbs, path),
+          buildCollectionPage(origin, {
+            name: `${store.name} deals`,
+            description: store.description,
+            path,
+            itemPaths: live.map((deal) => dealHref(deal)),
+          }),
+        ]}
+      />
       <PageHeading
-        crumbs={[{ label: 'Home', href: '/' }, { label: 'Stores' }, { label: store.name }]}
+        crumbs={crumbs}
         eyebrow="Store"
         title={`${store.name} deals`}
         lead={store.description}
+        updatedAt={newestUpdatedAt([...live, ...recent], store.updatedAt)}
       />
 
       <PageSection title={`Live ${store.name} deals`} className="mt-0 md:mt-0">

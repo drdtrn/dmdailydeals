@@ -23,7 +23,7 @@
  *
  * Themes:
  *   - Light is the default. Dark follows the OS (prefers-color-scheme) unless <html data-theme>
- *     says otherwise; ThemeToggle writes data-theme and an inline script restores it before paint.
+ *     says otherwise; ThemeToggle writes data-theme and a cookie; the root layout renders the saved value server-side.
  *   - Any element can force a scope with data-theme="dark" | "light". The hero band and the
  *     header use data-theme="dark" so they are dark in both modes.
  *   - Components use semantic tokens (bg-background, text-muted-foreground, ...) so they follow

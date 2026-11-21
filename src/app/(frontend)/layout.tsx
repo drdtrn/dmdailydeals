@@ -1,13 +1,14 @@
 import type { Metadata, Viewport } from 'next'
 import { Bodoni_Moda, DM_Sans } from 'next/font/google'
-import { draftMode } from 'next/headers'
+import { cookies, draftMode } from 'next/headers'
 import React from 'react'
 
 import { AdminBar } from '@/components/AdminBar'
 import { Footer } from '@/components/layout/Footer'
 import { Header } from '@/components/layout/Header'
-import { themeInitScript } from '@/components/theme/theme'
+import { parseTheme, THEME_COOKIE } from '@/components/theme/theme'
 import { getServerSideURL } from '@/utilities/getURL'
+import { FEED_ALTERNATES, INDEXABLE_ROBOTS } from '@/lib/seo/meta'
 import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
 import { cn } from '@/utilities/ui'
 
@@ -32,13 +33,16 @@ const bodoniModa = Bodoni_Moda({
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const { isEnabled } = await draftMode()
+  // A saved light/dark choice is rendered into <html> on the server (see components/theme).
+  const theme = parseTheme((await cookies()).get(THEME_COOKIE)?.value)
 
   return (
-    <html className={cn(dmSans.variable, bodoniModa.variable)} lang="en" suppressHydrationWarning>
-      <head>
-        {/* Restores a saved light/dark choice before first paint (see components/theme). */}
-        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
-      </head>
+    <html
+      className={cn(dmSans.variable, bodoniModa.variable)}
+      data-theme={theme}
+      lang="en"
+      suppressHydrationWarning
+    >
       <body>
         <a
           href="#main"
@@ -70,6 +74,8 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
   },
+  robots: INDEXABLE_ROBOTS,
+  alternates: FEED_ALTERNATES,
 }
 
 export const viewport: Viewport = {

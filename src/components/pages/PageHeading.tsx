@@ -1,6 +1,7 @@
 import React from 'react'
 
 import { Breadcrumbs, type Crumb } from '@/components/layout/Breadcrumbs'
+import { UpdatedAt } from '@/components/pages/UpdatedAt'
 import { cn } from '@/utilities/ui'
 
 type Props = {
@@ -9,11 +10,13 @@ type Props = {
   title: React.ReactNode
   /** A short paragraph under the title. */
   lead?: React.ReactNode
+  /** ISO instant of the newest change on the page; shown as "Updated <time>". */
+  updatedAt?: string | null
   className?: string
 }
 
 /** Breadcrumbs, the page's single h1 and an optional lead paragraph. */
-export function PageHeading({ crumbs, eyebrow, title, lead, className }: Props) {
+export function PageHeading({ crumbs, eyebrow, title, lead, updatedAt, className }: Props) {
   return (
     <header className={cn('pt-8 pb-8 md:pt-12 md:pb-10', className)}>
       {crumbs ? <Breadcrumbs items={crumbs} className="mb-5" /> : null}
@@ -26,6 +29,7 @@ export function PageHeading({ crumbs, eyebrow, title, lead, className }: Props) 
       {lead ? (
         <div className="mt-4 max-w-[62ch] text-soft-foreground md:text-[17px]">{lead}</div>
       ) : null}
+      <UpdatedAt at={updatedAt} className="mt-4" />
     </header>
   )
 }

@@ -9,6 +9,7 @@ import { blogPageHref } from '@/lib/blogHref'
 import { listPosts } from '@/lib/data/content'
 import { parsePageParam } from '@/lib/pagination'
 import { pageMetadata } from '@/lib/seo/meta'
+import { ROOT_CRUMB } from '@/lib/seo/site'
 
 type Args = { params: Promise<{ pageNumber: string }> }
 
@@ -35,11 +36,7 @@ export default async function BlogPage({ params }: Args) {
     <div className="pb-16">
       <div className="container">
         <PageHeading
-          crumbs={[
-            { label: 'Home', href: '/' },
-            { label: 'Blog', href: '/blog' },
-            { label: `Page ${parsed.page}` },
-          ]}
+          crumbs={[ROOT_CRUMB, { label: 'Blog', href: '/blog' }, { label: `Page ${parsed.page}` }]}
           title={`Blog, page ${parsed.page}`}
         />
       </div>

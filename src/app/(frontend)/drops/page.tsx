@@ -7,7 +7,9 @@ import { PageHeading } from '@/components/pages/PageHeading'
 import { Pager } from '@/components/pages/Pager'
 import { DROPS_PER_PAGE, listDrops } from '@/lib/data/drops'
 import { isPageInRange, parsePageParam } from '@/lib/pagination'
+import { newestUpdatedAt } from '@/lib/freshness'
 import { pageMetadata } from '@/lib/seo/meta'
+import { ROOT_CRUMB } from '@/lib/seo/site'
 
 type Props = { searchParams: Promise<{ page?: string | string[] }> }
 
@@ -40,7 +42,8 @@ export default async function DropsPage({ searchParams }: Props) {
   return (
     <div className="container pb-8">
       <PageHeading
-        crumbs={[{ label: 'Home', href: '/' }, { label: 'Drops' }]}
+        crumbs={[ROOT_CRUMB, { label: 'Drops' }]}
+        updatedAt={newestUpdatedAt(items)}
         title="Deal drop archive"
         lead="One hero deal and a set of curated picks, published every day at 9:00 AM ET. Open a day to see what dropped and which deals were the real thing."
       />

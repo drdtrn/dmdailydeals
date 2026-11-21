@@ -3,10 +3,10 @@
 import { Moon, Sun } from 'lucide-react'
 import React from 'react'
 
-import { THEME_STORAGE_KEY } from './theme'
+import { themeCookie } from './theme'
 
 /**
- * Switches between light and dark by writing <html data-theme> and remembering the choice.
+ * Switches between light and dark by writing <html data-theme> and remembering the choice in a cookie.
  * It holds no React state: the icon swap is pure CSS (.theme-icon-*), so there is nothing to
  * hydrate-mismatch and no effect to lint. Before the first choice the site follows the OS.
  */
@@ -18,11 +18,8 @@ export function ThemeToggle({ className }: { className?: string }) {
       (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
     const next = current === 'dark' ? 'light' : 'dark'
     root.dataset.theme = next
-    try {
-      window.localStorage.setItem(THEME_STORAGE_KEY, next)
-    } catch {
-      // Private mode or blocked storage: the choice just lasts for this page view.
-    }
+    // Remembered in a cookie so the server can render the right theme into the HTML.
+    document.cookie = themeCookie(next)
   }
 
   return (

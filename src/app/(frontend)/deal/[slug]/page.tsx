@@ -7,10 +7,14 @@ import { DealDetail } from '@/components/pages/DealDetail'
 import { DealGrid } from '@/components/pages/DealGrid'
 import { PageSection } from '@/components/pages/PageHeading'
 import { Breadcrumbs } from '@/components/layout/Breadcrumbs'
+import { DisclosureNote } from '@/components/deals/DisclosureNote'
+import { JsonLd } from '@/components/seo/JsonLd'
 import { categoryHref } from '@/lib/categories'
 import { getDealBySlug, getLowestFlags, getRelatedDeals } from '@/lib/data/deals'
 import { relId } from '@/lib/relId'
+import { buildBreadcrumbList, buildProduct } from '@/lib/seo/jsonld'
 import { pageMetadata } from '@/lib/seo/meta'
+import { ROOT_CRUMB, siteOrigin } from '@/lib/seo/site'
 
 type Props = { params: Promise<{ slug: string }> }
 
@@ -42,13 +46,23 @@ export default async function DealPage({ params }: Props) {
   const lowest = await getLowestFlags([deal, ...related])
 
   const crumbs = [
-    { label: 'Home', href: '/' },
+    ROOT_CRUMB,
     ...(category ? [{ label: category.title, href: categoryHref(category.slug) }] : []),
     { label: deal.title },
   ]
 
+  const origin = siteOrigin()
+  const path = `/deal/${deal.slug}`
+
   return (
     <div className="container pb-8">
+      <JsonLd
+        data={[
+          // Product only while the deal is live; expired and sold-out pages keep the breadcrumb only.
+          buildProduct(origin, deal),
+          buildBreadcrumbList(origin, crumbs, path),
+        ]}
+      />
       <Breadcrumbs items={crumbs} className="pt-8 pb-6 md:pt-10 md:pb-8" />
       <DealDetail deal={deal} lowestIn90Days={Boolean(lowest[String(deal.id)])} />
 
@@ -76,6 +90,7 @@ export default async function DealPage({ params }: Props) {
               : `More ${category.title.toLowerCase()} deals`
           }
         >
+          <DisclosureNote className="mb-6" />
           <DealGrid
             deals={related}
             lowest={lowest}

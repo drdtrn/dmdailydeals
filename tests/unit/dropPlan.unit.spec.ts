@@ -105,7 +105,7 @@ describe('IndexNow helpers', () => {
         host: 'dmdailydeals.com',
         origin: 'https://dmdailydeals.com',
         key,
-        keyLocation: `https://dmdailydeals.com/${key}.txt`,
+        keyLocation: 'https://dmdailydeals.com/indexnow-key.txt',
       },
     })
   })

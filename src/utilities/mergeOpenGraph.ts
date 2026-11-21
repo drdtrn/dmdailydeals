@@ -8,6 +8,9 @@ const defaultOpenGraph: Metadata['openGraph'] = {
   images: [
     {
       url: `${getServerSideURL()}/brand/og-default.png`,
+      width: 1200,
+      height: 630,
+      alt: 'DMDailyDeals: curated daily deals',
     },
   ],
   siteName: 'DMDailyDeals',

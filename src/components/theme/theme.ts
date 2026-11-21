@@ -1,7 +1,17 @@
-export const THEME_STORAGE_KEY = 'dm-theme'
+export const THEME_COOKIE = 'dm-theme'
+
+export type Theme = 'light' | 'dark'
+
+/** A saved choice from the cookie value, or undefined (follow the OS). Anything else is ignored. */
+export function parseTheme(value: string | undefined | null): Theme | undefined {
+  return value === 'light' || value === 'dark' ? value : undefined
+}
 
 /**
- * Runs in <head> before first paint: applies a saved light/dark choice to <html data-theme>.
- * With no saved choice nothing is set and the CSS follows prefers-color-scheme.
+ * The cookie that remembers the choice. It is read by the root layout on the server, which writes
+ * <html data-theme> into the HTML itself: no inline script, so nothing to flash and nothing for
+ * React to warn about when it re-renders the document (404 pages).
  */
-export const themeInitScript = `try{var t=localStorage.getItem('${THEME_STORAGE_KEY}');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}`
+export function themeCookie(theme: Theme): string {
+  return `${THEME_COOKIE}=${theme}; Path=/; Max-Age=31536000; SameSite=Lax`
+}

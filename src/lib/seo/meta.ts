@@ -2,10 +2,34 @@ import type { Metadata } from 'next'
 
 import type { Media } from '@/payload-types'
 
-import { resolveImage } from '@/lib/media'
 import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
 
-const SITE_NAME = 'DMDailyDeals'
+import { DEFAULT_OG_IMAGE_PATH, RSS_PATH, SITE_NAME } from './site'
+
+/** Robots directives for an indexable page. Never `nosnippet`; large image previews allowed. */
+export const INDEXABLE_ROBOTS: NonNullable<Metadata['robots']> = {
+  index: true,
+  follow: true,
+  googleBot: { index: true, follow: true, 'max-image-preview': 'large' },
+}
+
+/** Thin or utility pages: kept out of the index, links still followed. */
+export const NOINDEX_ROBOTS: NonNullable<Metadata['robots']> = { index: false, follow: true }
+
+/** The RSS feed advertised in every page's `<head>`. */
+export const FEED_ALTERNATES = {
+  types: { 'application/rss+xml': [{ url: RSS_PATH, title: `${SITE_NAME} drops` }] },
+}
+
+type OgImage = { src: string; width: number; height: number; alt: string }
+
+/** The media's own `og` (1200x630) size, only when it exists; otherwise null (use the default). */
+export function ogImageOf(media: Media | number | null | undefined): OgImage | null {
+  if (!media || typeof media !== 'object') return null
+  const og = media.sizes?.og
+  if (!og?.url || !og.width || !og.height) return null
+  return { src: og.url, width: og.width, height: og.height, alt: media.alt || '' }
+}
 
 type Args = {
   /** Page title without the site name (the root layout's title template adds " · DMDailyDeals"). */
@@ -31,8 +55,8 @@ export function clipDescription(text: string | null | undefined, max = 160): str
 }
 
 /**
- * Basic per-page metadata: title, description, canonical, Open Graph and Twitter. (JSON-LD, robots
- * rules and sitemaps are the SEO layer's job in Phase 6.)
+ * Per-page metadata: title, description, canonical, robots, Open Graph, Twitter and the RSS link.
+ * Each key replaces the root layout's, so every page restates robots, twitter and alternates.
  */
 export function pageMetadata({
   title,
@@ -44,12 +68,12 @@ export function pageMetadata({
   noindex,
 }: Args): Metadata {
   const desc = clipDescription(description)
-  const og = resolveImage(image, 'og')
+  const og = ogImageOf(image)
   const fullTitle = absoluteTitle ? title : `${title} · ${SITE_NAME}`
   return {
     title: absoluteTitle ? { absolute: title } : title,
     ...(desc ? { description: desc } : {}),
-    alternates: { canonical: path },
+    alternates: { canonical: path, ...FEED_ALTERNATES },
     openGraph: mergeOpenGraph({
       type,
       title: fullTitle,
@@ -57,6 +81,16 @@ export function pageMetadata({
       url: path,
       ...(og ? { images: [{ url: og.src, width: og.width, height: og.height, alt: og.alt }] } : {}),
     }),
-    ...(noindex ? { robots: { index: false, follow: true } } : {}),
+    twitter: {
+      card: 'summary_large_image',
+      title: fullTitle,
+      ...(desc ? { description: desc } : {}),
+      images: [
+        og
+          ? { url: og.src, width: og.width, height: og.height, alt: og.alt }
+          : { url: DEFAULT_OG_IMAGE_PATH, alt: SITE_NAME },
+      ],
+    },
+    robots: noindex ? NOINDEX_ROBOTS : INDEXABLE_ROBOTS,
   }
 }

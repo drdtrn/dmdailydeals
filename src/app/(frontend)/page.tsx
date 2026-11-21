@@ -11,10 +11,13 @@ import { HeroDeal } from '@/components/deals/HeroDeal'
 import { NewsletterCta } from '@/components/deals/NewsletterCta'
 import { DealGrid } from '@/components/pages/DealGrid'
 import { PageSection } from '@/components/pages/PageHeading'
+import { JsonLd } from '@/components/seo/JsonLd'
 import { getCurrentDrop } from '@/lib/data/drops'
 import { getNextDropTarget, getOffer, getSiteSettings } from '@/lib/data/site'
 import { formatDropAt } from '@/lib/format'
+import { buildOrganization, buildWebSite } from '@/lib/seo/jsonld'
 import { clipDescription, pageMetadata } from '@/lib/seo/meta'
+import { siteOrigin } from '@/lib/seo/site'
 import { resolveImage } from '@/lib/media'
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -44,6 +47,8 @@ export default async function HomePage() {
   ])
 
   const hero = current?.hero ?? null
+  const origin = siteOrigin()
+  const jsonLd = <JsonLd data={[buildWebSite(origin), buildOrganization(origin)]} />
   const showNewsletter = settings.newsletterEnabled !== false
 
   const offerAndNewsletter = (
@@ -56,6 +61,7 @@ export default async function HomePage() {
   if (!current || !hero) {
     return (
       <>
+        {jsonLd}
         <section data-theme="dark" className="bg-ink pb-10 text-foreground md:pb-16">
           <div className="container py-8 md:py-14">
             <Countdown target={nextDropAt} />
@@ -81,6 +87,7 @@ export default async function HomePage() {
 
   return (
     <>
+      {jsonLd}
       <HeroBand dropDate={current.drop.date} countdown={<Countdown target={nextDropAt} />}>
         <HeroDeal
           deal={hero}

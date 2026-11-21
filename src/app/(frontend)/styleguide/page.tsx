@@ -90,7 +90,7 @@ export default function StyleguidePage() {
     <>
       <div className="container py-10 md:py-14">
         <Breadcrumbs
-          items={[{ label: 'Home', href: '/' }, { label: 'Style guide' }]}
+          items={[{ label: 'DMDailyDeals', href: '/' }, { label: 'Style guide' }]}
           className="mb-6"
         />
         <h1 className="font-display text-4xl leading-tight font-medium md:text-5xl">Style guide</h1>

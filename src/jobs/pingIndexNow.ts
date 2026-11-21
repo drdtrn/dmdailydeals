@@ -11,8 +11,8 @@ import { buildIndexNowUrls, INDEXNOW_ENDPOINT, resolveIndexNowTarget } from '../
  * 200 and 202 are OK. Anything else throws so the job is retried (429 and 5xx are transient; a 4xx
  * such as 403 means the key file is not being served yet, see below, and shows up as a failed job).
  *
- * TODO Phase 6: serve `https://<site>/<INDEXNOW_KEY>.txt` with the key as its content, or IndexNow
- * answers 403.
+ * The key file is served at `/indexnow-key.txt` (see `app/indexnow-key.txt/route.ts`) and sent as
+ * `keyLocation`; if that route is not reachable on the public host, IndexNow answers 403.
  */
 export const pingIndexNow: TaskConfig<'pingIndexNow'> = {
   slug: 'pingIndexNow',

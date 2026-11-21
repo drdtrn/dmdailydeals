@@ -107,6 +107,8 @@ export async function getDropNeighbours(date: string): Promise<DropNeighbours> {
 export type DropListItem = {
   slug: string
   date: string
+  /** The drop document's `updatedAt`. */
+  updatedAt: string
   pickCount: number
   hero: Pick<Deal, 'title' | 'image' | 'category'> | null
 }
@@ -136,6 +138,7 @@ export async function listDrops(page: number): Promise<{
       return {
         slug: drop.slug ?? drop.date.slice(0, 10),
         date: drop.date,
+        updatedAt: drop.updatedAt,
         // The hero is counted with the picks: "7 deals" is what a reader sees on the drop page.
         pickCount: (drop.picks?.length ?? 0) + 1,
         hero: hero ? { title: hero.title, image: hero.image, category: hero.category } : null,
@@ -187,6 +190,7 @@ export async function getDropsForCategory(
         return {
           slug: drop.slug ?? drop.date.slice(0, 10),
           date: drop.date,
+          updatedAt: drop.updatedAt,
           pickCount: (drop.picks?.length ?? 0) + 1,
           hero: hero ? { title: hero.title, image: hero.image, category: hero.category } : null,
         }
