@@ -564,6 +564,26 @@ Also confirm the chosen search API's endpoints, result format, terms and pricing
 - No relative URLs in `NextResponse.redirect`.
 - No caching on `/go/*`.
 
+**Outcome (2026-11-21): done.** Verified locally, on a fresh migrated database, and on a production `next start` server (`/go` 302 with `no-store` and `noindex`, click row with no IP, job runner 401 without the bearer). A real HTTP end-to-end run worked: a scheduled drop went live via the cron loop, the previous one was archived, and the next minute's run changed nothing. Deviations and notes for later phases:
+- **Follow-up tasks** (`revalidateDrop`, `pingIndexNow`) run on the `default` queue, so they land within about a minute of the flip.
+  - `postDropToTelegram` is not built yet (Phase 7). `publishDueDrops` marks where to queue it.
+- **A drop goes live within about 1–2 minutes of `publishAt`.** The schedule queues `publishDueDrops` with `waitUntil` set to the next minute.
+- **A back-filled drop never replaces a newer live drop.** Stale due drops are archived instead (`planDropTransition`, unit-tested).
+- **Expiry rules:**
+  - The deals of the drop going live are protected.
+  - Only published deals are touched.
+  - A deal that fails validation is logged and skipped, so it can't block the others.
+- **`revalidateDrop` uses `revalidateTag(tag, { expire: 0 })`**, so the warm-up GET regenerates the page instead of getting the stale copy. Warm-up failures are best-effort; `revalidateTag` failures fail the job so it retries.
+- **`pingIndexNow` is a no-op without `INDEXNOW_KEY` or on a localhost site URL.** Any status other than 200/202 fails the job.
+  - **Phase 6 must serve the key file before `INDEXNOW_KEY` is set.**
+- **`/go/[id]` lives in the `(frontend)` group** and is `force-dynamic`.
+  - Unknown, unpublished and `draft`-status deals return 404. Expired and sold-out deals still redirect.
+  - The link template applies only when the store is `active`. A broken template falls back to the plain product URL, with an error log, so the click isn't lost.
+  - Only the referer's path is stored, and only when it's same-origin. A missing user agent counts as a bot.
+- **`typecheck` is now `next typegen && tsc --noEmit`.** `RouteContext<'/go/[id]'>` types exist only after typegen.
+- **`scripts/cron-loop.sh` (`pnpm cron:dev`)** is POSIX sh + curl, configured with `BASE_URL`, `CRON_SECRET`, `INTERVAL`, `QUEUES`, `TIMEOUT` and `ONCE`. Phase 9's cron container reuses it, with a second loop set to `QUEUES=ai`.
+- **Known gap:** if `publishDueDrops` crashes between its writes and queueing the follow-ups, the follow-ups are lost. The window is tiny, and pages self-heal when the cache expires.
+
 ## Phase 4 — Design system  (direction: Hybrid · brand: D/M monogram · mockup approval pending)
 
 > **How this serves the primary goal:** the drop has to look like a drop: an unmistakable hero, a countdown that builds anticipation, and deal cards that show the real discount at a glance on a phone.

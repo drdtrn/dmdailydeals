@@ -50,12 +50,38 @@ If your shell has a global Node earlier on `PATH` than mise's shims, run `eval "
 | `pnpm format` / `pnpm format:check` | Prettier                                                        |
 | `pnpm test:int`                     | Unit + integration tests (needs Postgres, uses a test database) |
 | `pnpm seed`                         | Example content for dev/test (never for production)             |
+| `pnpm cron:dev`                     | Local job runner loop (publishes drops; see below)              |
 | `pnpm migrate`                      | Apply migrations (migration-managed databases)                  |
 | `pnpm migrate:create <name>`        | Generate a migration after a schema change                      |
 | `pnpm migrate:status`               | Show which migrations have run                                  |
 | `pnpm test:e2e`                     | End-to-end tests (starts the dev server)                        |
 | `pnpm generate:types`               | Regenerate `src/payload-types.ts` after changing collections    |
 | `pnpm generate:importmap`           | Regenerate the admin import map after changing admin components |
+
+## Jobs and the daily drop
+
+Scheduled work (publishing the due drop, expiring deals, revalidating pages, pinging IndexNow) runs as Payload jobs. There is no `autoRun` and no `jobs:handle-schedules`: the only runner is the HTTP endpoint `GET /api/payload-jobs/run?queue=<name>`, protected by `Authorization: Bearer $CRON_SECRET`. It also queues the scheduled tasks (`publishDueDrops` every minute, on the `drops` queue). Follow-up tasks go on the `default` queue.
+
+Locally, run the loop next to `pnpm dev`:
+
+```bash
+pnpm cron:dev                # every 60 s: ?queue=drops, then ?queue=default
+```
+
+`scripts/cron-loop.sh` is plain `sh` + `curl`, so the production `cron` container can run the same file. It reads `CRON_SECRET` from the environment (or from `./.env`) and accepts:
+
+| Variable      | Default                 | Meaning                        |
+| ------------- | ----------------------- | ------------------------------ |
+| `BASE_URL`    | `http://localhost:3000` | App to call                    |
+| `CRON_SECRET` | from `.env`             | Bearer secret (required)       |
+| `INTERVAL`    | `60`                    | Seconds between rounds         |
+| `QUEUES`      | `drops default`         | Queues to run, in order        |
+| `TIMEOUT`     | `55`                    | Per-request timeout in seconds |
+| `ONCE`        | unset                   | `1` runs one round and exits   |
+
+A scheduled job is queued with `waitUntil` set to the next minute, so a drop goes live within about two minutes of its `publishAt`. After a drop goes live, `revalidateDrop` invalidates the cache tags (`drop:current`, `drops`, `drop:<date>`, `category:<slug>`, `store:<slug>`, `deal:<id>`, `sitemap`) and warms `/` and `/drops/<date>` through self calls (`INTERNAL_SERVER_URL`, default `http://127.0.0.1:$PORT`).
+
+`/go/<deal id>` is the outbound redirect: it applies the store's link template (only when the store's affiliate status is `active`), answers `302` with `Cache-Control: no-store`, and logs the click (no IP address, no user agent) after the response.
 
 ## Database schema workflow
 

@@ -20,6 +20,9 @@ import { Footer } from './Footer/config'
 import { Header } from './Header/config'
 import { AlwaysOnOffer } from './globals/AlwaysOnOffer'
 import { SiteSettings } from './globals/SiteSettings'
+import { pingIndexNow } from './jobs/pingIndexNow'
+import { publishDueDrops } from './jobs/publishDueDrops'
+import { revalidateDrop } from './jobs/revalidateDrop'
 import { migrations } from './migrations'
 import { plugins } from './plugins'
 import { defaultLexical } from '@/fields/defaultLexical'
@@ -122,6 +125,9 @@ export default buildConfig({
         return authHeader === `Bearer ${secret}`
       },
     },
-    tasks: [],
+    // No `autoRun` and no `jobs:handle-schedules`: the only runner is the HTTP endpoint
+    // GET /api/payload-jobs/run (cron container / `pnpm cron:dev`), which also handles schedules.
+    // Queues: `drops` (publishDueDrops), `default` (follow-ups, schedulePublish), `ai` (Phase 8).
+    tasks: [publishDueDrops, revalidateDrop, pingIndexNow],
   },
 })
