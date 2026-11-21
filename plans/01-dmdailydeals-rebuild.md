@@ -58,8 +58,7 @@ Someone who arrives at dmdailydeals.com, whether from Google, an AI assistant, t
    │  web      Next.js 16.4 + Payload 3.94 (one standalone image)           │
    │           ├─ (frontend) public site: ISR pages + tag cache             │
    │           ├─ (payload)  /admin, /api (REST), /api/payload-jobs/run     │
-   │           ├─ /go/[id]   outbound redirect + click log                  │
-   │           └─ /api/internal/revalidate (secret-protected fallback)      │
+   │           └─ /go/[id]   outbound redirect + click log                  │
    │  cron     curl loops → /api/payload-jobs/run (A: drops+default every   │
    │           minute · B: ai queue, one job at a time, long timeout)       │
    │           (AI draft jobs call the AI provider + search API from web)   │
@@ -77,7 +76,7 @@ Someone who arrives at dmdailydeals.com, whether from Google, an AI assistant, t
    - `revalidatePath`/`revalidateTag` throw outside a Next request context. Payload issues #15388 and #16392 are both still open in 3.x.
    - A job run inside a route handler has that request context.
 
-   This is verified by a spike in Phase 1. The fallback is for tasks to POST to `/api/internal/revalidate`.
+   ✅ **Verified by the Phase 1 spike (2026-11-21):** a job run through `GET /api/payload-jobs/run` called `revalidateTag('spike', { expire: 0 })` without error, and the tagged static page regenerated on the next request. No fallback endpoint is needed.
 4. **Migrations run on startup** via `prodMigrations`, again because the standalone image can't run `payload migrate`.
 5. **Cloudflare caches static assets only** at launch. `revalidateTag` doesn't purge a CDN, so caching HTML at the edge would need purge calls. Origin ISR is fast enough to start with.
 6. **A single web instance.** ISR and the tag cache live on local disk and in memory. Running several instances would need a Redis cache handler, which is deferred.
@@ -443,6 +442,13 @@ Also confirm the chosen search API's endpoints, result format, terms and pricing
    - Queue it, then trigger `GET /api/payload-jobs/run` with the bearer secret.
    - Confirm it doesn't throw and that a page tagged `spike` regenerates.
    - If it fails, implement `/api/internal/revalidate` (POST with a secret that calls `revalidateTag`/`revalidatePath`) and have tasks `fetch` it.
+   - **Result (2026-11-21): PASS.**
+     - Setup: Payload 3.94.1, Next 16.4.6, production build served with `next start`.
+     - `/spike` was prerendered static, cached under tag `spike`.
+     - The queued task ran via `GET /api/payload-jobs/run` with `Authorization: Bearer $CRON_SECRET` (401 without it).
+     - `revalidateTag('spike', { expire: 0 })` succeeded inside the job, and the page's timestamp changed on the next request, then stayed cached.
+     - The fallback endpoint was not built and `REVALIDATE_SECRET` was dropped.
+     - Re-check once in Phase 9 against the standalone `server.js` in Docker. It's the same server code, but that's the real runtime.
 8. Quality gates:
    - ESLint (flat config, not `next lint`), Prettier and `tsc --noEmit`.
    - Vitest for unit tests and Playwright for end-to-end tests.
@@ -463,6 +469,18 @@ Also confirm the chosen search API's endpoints, result format, terms and pricing
 - No `DATABASE_URI`.
 - No `autoRun` and no `jobs:handle-schedules`. The HTTP runner is the only runner.
 - No `webpack()` config left that breaks the Turbopack build unless the build script uses `--webpack`.
+
+**Outcome (2026-11-21): done, all local checks pass** (install, lint, typecheck, format, integration tests, build, end-to-end tests). Deviations and notes for later phases:
+- **pnpm 11.28.13, not 12.** The template's `engines` allows pnpm 9–11.
+- **pnpm 11 no longer reads the `pnpm` field in `package.json`.** Build-script approvals (esbuild, sharp, unrs-resolver) now live in `pnpm-workspace.yaml` under `allowBuilds`.
+- **pnpm's minimum-release-age guard** auto-added exact-version exceptions for the 14 Payload 3.94.1 packages, which were one day old. Remove them once they age past the threshold, or when upgrading.
+- **ESLint:** the template's FlatCompat wrapper crashes with eslint-config-next 16, so the config was replaced with the native flat imports.
+  - `react-hooks/set-state-in-effect` and `react-hooks/refs` are **temporarily warnings** because of template components. **Phase 4 must set them back to `error`.**
+- **Dev Postgres is on host port 5433.** 5432 is used by another local project.
+- **CI runs integration tests before the build.** Until migrations exist, the dev-mode schema push in those tests creates the tables the build reads. **Phase 2 replaces this with `payload migrate` before the build.**
+- **CI is not verified yet.** `.github/workflows/ci.yml` only runs once `develop` is pushed.
+- **Playwright 1.63 needs Chromium build 1243.** Run `pnpm exec playwright install chromium` on a new machine.
+- **The template's Dockerfile** (node:22 alpine) is untouched until Phase 9.
 
 ## Phase 2 — Content model
 
@@ -515,7 +533,7 @@ Also confirm the chosen search API's endpoints, result format, terms and pricing
    - 302 to the absolute URL with `Cache-Control: no-store` and `X-Robots-Tag: noindex`.
    - **Never** set `Referrer-Policy: no-referrer`: Amazon's anti-cloaking rule (§C) requires the referring site to be identifiable.
    - Log the click via `after()`: `CF-IPCountry`, a bot check on the user agent, and `fromPath` from the referer.
-5. `/api/internal/revalidate`, only if the Phase 1 spike failed.
+5. ~~`/api/internal/revalidate`~~: not needed (the Phase 1 spike passed).
 
 **Doc references:** §A jobs (task shape, `schedule`, idempotency, HTTP runner); §B `revalidateTag` signature, `NextResponse.redirect`, `after()`.
 

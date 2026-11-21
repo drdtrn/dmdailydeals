@@ -1,0 +1,20 @@
+**/payload-types.ts
+.tmp
+**/.git
+**/.hg
+**/.pnp.*
+**/.svn
+**/.yarn/**
+**/build
+**/dist/**
+**/node_modules
+**/temp
+**/docs/**
+tsconfig.json
+
+
+# Generated or hand-authored files
+pnpm-lock.yaml
+src/app/(payload)/admin/importMap.js
+plans/**
+.next
