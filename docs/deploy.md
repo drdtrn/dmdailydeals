@@ -310,3 +310,24 @@ $RH down -v && rm .env.production caddy/certs/origin.*     # removes every conta
 ```
 
 Note that the seed writes its placeholder images into `./media` on the host, not into the stack's media volume.
+
+## 14. Phase 10: verify production
+
+`scripts/verify-production.sh` checks the live site from the outside. It is POSIX `sh` + `curl` + `grep`/`sed`/`awk` (no jq, node or python), so it runs on the VPS or a laptop.
+
+```bash
+BASE_URL=https://dmdailydeals.com sh scripts/verify-production.sh
+SKIP_GO=1 BASE_URL=https://dmdailydeals.com sh scripts/verify-production.sh   # skip the click-out check
+```
+
+Optional `DEAL_SLUG`, `DROP_DATE` and `GO_ID` pin the pages to test; otherwise they are discovered from `/sitemap/deals.xml`, `/sitemap/drops.xml` and the first `/go/<id>` link on the home page. **The `/go` check logs one real click** (flagged as a bot because the user agent is curl); `SKIP_GO=1` avoids that.
+
+It covers health, `robots.txt` (Allow/Disallow lines, Sitemap, AI crawlers not blocked), the sitemap index and children, `llms.txt`, `feed.xml`, a head check as GPTBot, ClaudeBot, PerplexityBot, OAI-SearchBot, Claude-SearchBot, Googlebot and Bingbot (title and canonical inside `<head>`, JSON-LD present), JSON-LD types, `/go`, 404s and redirects, security headers and the IndexNow key. Each check prints `PASS`, `WARN` or `FAIL`; it exits non-zero on any FAIL. Over plain HTTP, HSTS is a WARN; an unset `INDEXNOW_KEY` is a WARN.
+
+Manual checks (printed at the end of the run with URLs filled in):
+
+- [ ] Google Rich Results Test on a deal page and a drop page (`https://search.google.com/test/rich-results?url=...`)
+- [ ] `https://validator.schema.org/` on `/`
+- [ ] Search Console URL Inspection, "Test live URL"
+- [ ] Cloudflare AI crawl settings: Search, Agent and Training = Allow, never Block
+- [ ] Sitemap submitted in Search Console and Bing Webmaster Tools

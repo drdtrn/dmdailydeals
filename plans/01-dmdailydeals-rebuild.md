@@ -1,6 +1,6 @@
 # DMDailyDeals rebuild — product & technical plan
 
-Status: draft for review · Written 2026-11-21 · Branch: `develop` (the old Express/EJS/Vite code is frozen on `legacy-version`)
+Status: phases 1–10 implemented and verified locally on `develop` (2026-11-21); production deploy and its checks are the next step (see Phase 9 and 10 outcomes) · Written 2026-11-21 · Branch: `develop` (the old Express/EJS/Vite code is frozen on `legacy-version`)
 
 How to use this file: each phase can be done in a fresh session. Read the Primary goal, Decisions, Architecture and Phase 0 first, then only the phase you're doing.
 
@@ -1081,6 +1081,32 @@ Independently, the image was booted against an empty database: it ran all 4 migr
 5. Click-out check: 10 test clicks from different pages appear correctly in `clicks`.
 6. Cloudflare audit: Search and Agent are Allow, Training matches D7 and is **not** Block. Googlebot fetches succeed (Search Console URL Inspection → live test).
 7. Blog loop: brief → draft → review → publish on production. The post appears in `/blog`, its category hub, the sitemap and IndexNow, and the provider spend for that draft matches `brief.usage`.
+
+**Outcome (2026-11-21): the local part is done. The production part waits on the first deploy.**
+1. **Anti-pattern grep is clean.** It checked for:
+   - single-argument `revalidateTag`, `DATABASE_URI`, `next/head`, `getStaticProps`/`getServerSideProps`, the `priority` prop
+   - `M/N` cron expressions, v4-only APIs, `autoRun`/`handle-schedules`
+   - `middleware.ts`, `images.domains`, `experimental.dynamicIO`/`ppr`/Cache Components
+   - FAQPage, HowTo, AggregateOffer, aggregateRating and merchant-only markup, and `nosnippet`
+   - `Referrer-Policy: no-referrer`
+   - `Date.now()` in render (the only use is inside `Countdown`'s `useEffect`)
+   - the Anthropic SDK
+
+   The only matches were comments, plan text, a log string and `next/headers`.
+2. **The full suite passes** on CI's sequence with a fresh database: lint (0 errors), typecheck, format, 419 integration tests, migrate plus drift check, seed, a database-free build, and 103 e2e tests (1 skipped: it needs `INDEXNOW_KEY`).
+3. **Drop rehearsal:** done locally against the production image in Phase 9. A scheduled drop went live through the cron container, and `/` updated without a cache clear. **The real run on production is still to do.**
+4. **Crawler check:** `scripts/verify-production.sh` automates the scriptable checks:
+   - health, robots, sitemap index and children, llms.txt, feed
+   - title, canonical and JSON-LD in the `<head>` for 7 crawler user agents
+   - JSON-LD per page type
+   - the `/go` headers, 404s, redirects and security headers, and the IndexNow key
+
+   Locally it gives 59 PASS, 2 WARN (no HSTS over plain HTTP, no IndexNow key) and 0 FAIL. **Run it with `BASE_URL=https://dmdailydeals.com` after the first deploy.** The Rich Results Test and validator.schema.org checks stay manual; the script prints them as a checklist.
+5. **Click-out check:** 10 test clicks against the production image all returned 302 and logged one row each, with the store matching the deal.
+   - The referring path is kept only for same-origin referers, without its query string. External and spoofed referers are dropped.
+   - UTMs are decoded, the country comes from `CF-IPCountry` (`XX` is stored as empty), GPTBot and curl are flagged as bots, and no IP is stored.
+6. **Cloudflare audit (user, after DNS setup):** Search = Allow, Agent = Allow, Training = Allow, **never Block**. Then run the Search Console URL Inspection live test for Googlebot.
+7. **Blog loop on production (user):** needs API keys, spend limits and the one approved real-money test per `experienceSource` (Phase 8 Outcome).
 
 ---
 

@@ -152,6 +152,8 @@ The script loads only when `NEXT_PUBLIC_UMAMI_SRC` and `NEXT_PUBLIC_UMAMI_WEBSIT
 
 The production stack (`compose.prod.yml`: web, two cron loops, Postgres, Umami, Caddy, nightly backups), the Cloudflare settings, backups and the restore drill, and the manual GitHub deploy workflow are described step by step in [`docs/deploy.md`](docs/deploy.md). `.env.production.example` lists every production variable.
 
+After a deploy, run `BASE_URL=https://dmdailydeals.com sh scripts/verify-production.sh` (add `SKIP_GO=1` to avoid logging a click); see "Phase 10" in the deploy guide.
+
 ## Database schema workflow
 
 Payload has two ways to change the schema, and they must never be mixed on one database.
