@@ -50,7 +50,7 @@ export function CategoryNav({
                       'inline-flex h-11 items-center rounded-full border px-[18px] text-sm whitespace-nowrap transition-colors',
                       item.active
                         ? 'border-primary bg-primary font-semibold text-primary-foreground'
-                        : 'border-border-strong font-medium text-foreground hover:border-primary',
+                        : 'border-border-strong bg-card font-medium text-foreground hover:border-primary',
                     )
                   : cn(
                       'inline-flex min-h-11 items-center border-b border-transparent text-[15px] transition-colors',

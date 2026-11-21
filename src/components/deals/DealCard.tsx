@@ -47,7 +47,10 @@ export function DealCard({
   return (
     <article
       data-state={unavailable ? deal.status : 'live'}
-      className={cn('flex min-w-0 flex-col', className)}
+      className={cn(
+        'flex min-w-0 flex-col overflow-hidden rounded-lg border border-border bg-card shadow-soft',
+        className,
+      )}
     >
       <Link href={dealHref(deal)} tabIndex={-1} aria-hidden="true" className="block">
         <DealImage
@@ -57,7 +60,7 @@ export function DealCard({
           sizes="(min-width: 1280px) 280px, (min-width: 768px) 25vw, 50vw"
           eager={eager}
           muted={unavailable}
-          className="aspect-square"
+          className="aspect-square rounded-none"
         >
           {unavailable ? (
             <span className="absolute top-2 left-2 rounded-xs bg-primary px-[7px] py-0.5 text-xs font-bold text-primary-foreground md:top-2.5 md:left-2.5 md:px-2 md:py-[3px] md:text-[13px]">
@@ -72,48 +75,50 @@ export function DealCard({
         </DealImage>
       </Link>
 
-      {eyebrow ? (
-        <p className="mt-2.5 mb-0.5 text-[11px] tracking-[0.12em] text-muted-foreground uppercase md:mt-3.5 md:mb-1">
-          {eyebrow}
-        </p>
-      ) : null}
-      <Heading className="min-h-[39px] text-[15px] leading-[1.3] font-semibold md:min-h-[43px] md:text-base md:leading-[1.35]">
-        <Link href={dealHref(deal)} className="hover:underline">
-          {deal.title}
-        </Link>
-      </Heading>
-
-      <Price
-        price={deal.price}
-        wasPrice={deal.wasPrice}
-        currency={deal.currency}
-        muted={unavailable}
-        className="mt-2 md:mt-2.5"
-      />
-
-      {lowestIn90Days && !unavailable ? (
-        <LowestBadge className="mt-2 self-start md:mt-2.5" />
-      ) : null}
-      <PriceChecked at={deal.priceCheckedAt} className="mt-2" />
-
-      <div className="mt-auto pt-3 md:pt-3.5">
-        {unavailable ? (
-          <Link
-            href={dealHref(deal)}
-            className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'w-full')}
-          >
-            View details
-            <span className="sr-only">: {deal.title}</span>
+      <div className="flex flex-1 flex-col p-3 pt-0 md:p-4 md:pt-0">
+        {eyebrow ? (
+          <p className="mt-2.5 mb-0.5 text-[11px] tracking-[0.12em] text-muted-foreground uppercase md:mt-3.5 md:mb-1">
+            {eyebrow}
+          </p>
+        ) : null}
+        <Heading className="min-h-[39px] text-[15px] leading-[1.3] font-semibold md:min-h-[43px] md:text-base md:leading-[1.35]">
+          <Link href={dealHref(deal)} className="hover:underline">
+            {deal.title}
           </Link>
-        ) : (
-          <DealCta
-            deal={deal}
-            label="Get deal"
-            variant="outline"
-            size="default"
-            className="min-h-11 h-auto w-full text-sm"
-          />
-        )}
+        </Heading>
+
+        <Price
+          price={deal.price}
+          wasPrice={deal.wasPrice}
+          currency={deal.currency}
+          muted={unavailable}
+          className="mt-2 md:mt-2.5"
+        />
+
+        {lowestIn90Days && !unavailable ? (
+          <LowestBadge className="mt-2 self-start md:mt-2.5" />
+        ) : null}
+        <PriceChecked at={deal.priceCheckedAt} className="mt-2" />
+
+        <div className="mt-auto pt-3 md:pt-3.5">
+          {unavailable ? (
+            <Link
+              href={dealHref(deal)}
+              className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'w-full')}
+            >
+              View details
+              <span className="sr-only">: {deal.title}</span>
+            </Link>
+          ) : (
+            <DealCta
+              deal={deal}
+              label="Get deal"
+              variant="outline"
+              size="default"
+              className="min-h-11 h-auto w-full text-sm"
+            />
+          )}
+        </div>
       </div>
     </article>
   )

@@ -8,15 +8,13 @@ import { themeCookie } from './theme'
 /**
  * Switches between light and dark by writing <html data-theme> and remembering the choice in a cookie.
  * It holds no React state: the icon swap is pure CSS (.theme-icon-*), so there is nothing to
- * hydrate-mismatch and no effect to lint. Before the first choice the site follows the OS.
+ * hydrate-mismatch and no effect to lint. Light is the default for everyone (the OS preference is ignored); dark is opt-in.
  */
 export function ThemeToggle({ className }: { className?: string }) {
   function toggle() {
     const root = document.documentElement
-    const current =
-      root.dataset.theme ??
-      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
-    const next = current === 'dark' ? 'light' : 'dark'
+    // Light is the default; dark is an explicit opt-in.
+    const next = root.dataset.theme === 'dark' ? 'light' : 'dark'
     root.dataset.theme = next
     // Remembered in a cookie so the server can render the right theme into the HTML.
     document.cookie = themeCookie(next)

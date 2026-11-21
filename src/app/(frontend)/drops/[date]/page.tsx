@@ -85,7 +85,7 @@ export default async function DropPage({ params }: Props) {
       />
 
       {hero ? (
-        <div data-theme="dark" className="rounded-md bg-ink p-5 text-foreground md:p-10">
+        <div className="rounded-lg bg-gradient-to-b from-panel to-panel-end p-5 text-foreground md:p-10">
           <HeroDeal
             deal={hero}
             lowestIn90Days={Boolean(lowest[String(hero.id)])}

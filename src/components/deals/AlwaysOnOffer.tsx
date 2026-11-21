@@ -30,7 +30,7 @@ export function AlwaysOnOffer({
     <section
       aria-label="The deal that never expires"
       className={cn(
-        'flex min-w-0 flex-col border-y border-primary py-[26px] md:rounded-md md:border md:p-9',
+        'flex min-w-0 flex-col rounded-lg border border-border bg-card p-6 shadow-soft md:p-9',
         className,
       )}
     >

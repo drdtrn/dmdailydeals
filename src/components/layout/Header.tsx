@@ -11,8 +11,7 @@ import { MobileNav } from './MobileNav'
 import { cmsLinks, PRIMARY_NAV } from './nav'
 
 /**
- * Site header: always ink (dark scope) in both themes, so it joins the hero band on the home
- * page and acts as a masthead elsewhere. Links come from the code-defined primary nav plus any
+ * Site header: a white, slightly translucent sticky bar with a hairline underneath. Links come from the code-defined primary nav plus any
  * extra entries an editor adds to the `header` global.
  */
 export async function Header() {
@@ -20,10 +19,10 @@ export async function Header() {
   const items = [...PRIMARY_NAV, ...cmsLinks(headerData?.navItems)]
 
   return (
-    <header data-theme="dark" className="relative z-20 bg-ink text-foreground">
+    <header className="sticky top-0 z-20 border-b border-border bg-card/85 text-foreground backdrop-blur">
       <div className="container">
-        <div className="flex h-16 items-center justify-between gap-x-8 border-b border-border md:min-h-20">
-          <Logo tone="paper" href="/" eager />
+        <div className="flex h-16 items-center justify-between gap-x-8 md:min-h-20">
+          <Logo tone="auto" href="/" eager />
           <MainNav items={items} className="hidden md:block" />
           <Link
             href="/#newsletter"

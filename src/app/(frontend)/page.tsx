@@ -98,7 +98,7 @@ export default async function HomePage({
     return (
       <>
         {jsonLd}
-        <section data-theme="dark" className="bg-ink pb-10 text-foreground md:pb-16">
+        <section className="bg-gradient-to-b from-panel to-panel-end pb-10 text-foreground md:pb-16">
           <div className="container py-8 md:py-14">
             <Countdown target={nextDropAt} />
             <h1 className="mt-8 font-display text-4xl leading-[1.1] font-medium text-balance md:mt-12 md:text-6xl">

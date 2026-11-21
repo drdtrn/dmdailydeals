@@ -81,7 +81,7 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  colorScheme: 'light dark',
-  // The masthead is ink in both themes, so the browser chrome matches it.
-  themeColor: '#0B0B0C',
+  colorScheme: 'light',
+  // The header is white, so the browser chrome matches it.
+  themeColor: '#FFFFFF',
 }

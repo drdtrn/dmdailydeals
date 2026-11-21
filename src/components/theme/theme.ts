@@ -2,7 +2,7 @@ export const THEME_COOKIE = 'dm-theme'
 
 export type Theme = 'light' | 'dark'
 
-/** A saved choice from the cookie value, or undefined (follow the OS). Anything else is ignored. */
+/** A saved choice from the cookie value, or undefined (light, the default). Anything else is ignored. */
 export function parseTheme(value: string | undefined | null): Theme | undefined {
   return value === 'light' || value === 'dark' ? value : undefined
 }

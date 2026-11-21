@@ -16,17 +16,18 @@ type Props = {
 }
 
 /**
- * The dark hero band that carries the drop (Hybrid direction): drop meta, the countdown, and the
- * hero deal. data-theme="dark" keeps it dark in light mode too. The header sits directly above
- * and is also ink, so the two read as one band.
+ * The light stone hero band that carries the drop: drop meta, the countdown, and the hero deal.
+ * Energy comes from scale and type (large Bodoni digits), not from darkness.
  */
 export function HeroBand({ dropDate, issueNumber, countdown, children, className }: Props) {
   const issue = issueNumber ? ` · No. ${String(issueNumber).padStart(3, '0')}` : ''
   return (
     <section
-      data-theme="dark"
       aria-label="Today's drop"
-      className={cn('bg-ink pb-8 text-foreground md:pb-14', className)}
+      className={cn(
+        'bg-gradient-to-b from-panel to-panel-end pb-8 text-foreground md:pb-14',
+        className,
+      )}
     >
       <div className="container">
         <div className="flex items-baseline justify-between pt-5 text-xs tracking-[0.14em] text-muted-foreground uppercase md:hidden">

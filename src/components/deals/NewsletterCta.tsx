@@ -86,9 +86,8 @@ export function NewsletterCta({
   return (
     <section
       id={id}
-      data-theme="dark"
       aria-labelledby={`${id}-heading`}
-      className={cn('min-w-0 bg-ink px-5 py-8 text-foreground md:rounded-md md:p-9', className)}
+      className={cn('min-w-0 rounded-lg bg-panel px-5 py-8 text-foreground md:p-9', className)}
     >
       <Heading
         id={`${id}-heading`}
@@ -120,7 +119,7 @@ export function NewsletterCta({
             required
             autoComplete="email"
             placeholder="you@example.com"
-            className="bg-background md:h-[50px] md:min-w-[240px] md:flex-1"
+            className="bg-card md:h-[50px] md:min-w-[240px] md:flex-1"
           />
           <Button type="submit" disabled={status === 'sending'} className="md:h-[50px] md:px-6">
             {status === 'sending' ? 'Joining…' : 'Join the list'}

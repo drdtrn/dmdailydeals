@@ -28,8 +28,8 @@ type Props = {
 }
 
 /**
- * The hero deal of a drop. Meant to sit inside <HeroBand> (a dark scope), but it only uses
- * semantic tokens, so it also works inside any data-theme="dark" element. The image is the
+ * The hero deal of a drop. Meant to sit inside <HeroBand> (or any panel); it only uses
+ * semantic tokens, so it works in any theme scope. The image is the
  * page's LCP element: next/image `preload` puts it in the head.
  */
 export function HeroDeal({
@@ -58,7 +58,7 @@ export function HeroDeal({
         preload
         muted={unavailable}
         iconClassName="size-[104px] md:size-40"
-        className="aspect-[4/3] min-w-0 flex-[1_1_460px]"
+        className="aspect-[4/3] min-w-0 flex-[1_1_460px] rounded-lg border border-border bg-card shadow-soft"
       >
         {unavailable ? (
           <span className="absolute top-3 left-3 rounded-xs bg-primary px-2.5 py-1 text-sm font-bold text-primary-foreground md:top-4 md:left-4 md:px-3 md:py-[5px] md:text-base">
@@ -105,7 +105,7 @@ export function HeroDeal({
           {unavailable ? (
             <Link
               href={dealHref(deal)}
-              className="inline-flex h-[52px] items-center justify-center rounded-sm border border-primary px-7 font-semibold md:h-14"
+              className="inline-flex h-[52px] items-center justify-center rounded-sm border border-primary bg-card px-7 font-semibold md:h-14"
             >
               This deal has ended: see details
             </Link>

@@ -204,7 +204,7 @@ test.describe('blog accessibility', () => {
 
   for (const [name, viewport, scheme] of [
     ['phone, light', { width: 390, height: 844 }, 'light'],
-    ['desktop, dark', { width: 1440, height: 900 }, 'dark'],
+    ['desktop, OS dark (stays light)', { width: 1440, height: 900 }, 'dark'],
   ] as const) {
     test(`the guide has no serious axe violations (${name})`, async ({ page }) => {
       await page.setViewportSize(viewport)

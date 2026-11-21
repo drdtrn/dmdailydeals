@@ -39,6 +39,8 @@ const swatches: { name: string; token: string }[] = [
   { name: 'ink', token: 'bg-ink' },
   { name: 'paper', token: 'bg-paper border border-border' },
   { name: 'background', token: 'bg-background border border-border' },
+  { name: 'card (white)', token: 'bg-card border border-border' },
+  { name: 'panel (stone)', token: 'bg-panel' },
   { name: 'surface', token: 'bg-surface' },
   { name: 'border', token: 'bg-border' },
   { name: 'border-strong', token: 'bg-border-strong' },
@@ -170,7 +172,7 @@ export default function StyleguidePage() {
                 leading={{ label: 'All', href: '/', active: true }}
               />
               <CategoryNav label="Categories (active)" activeSlug="tech" />
-              <div className="rounded-md bg-ink p-4 text-foreground" data-theme="dark">
+              <div className="rounded-lg bg-panel p-4 text-foreground">
                 <CategoryNav label="Categories (links)" variant="links" activeSlug="travel" />
               </div>
               <Breadcrumbs
@@ -193,10 +195,10 @@ export default function StyleguidePage() {
 
       <div className="container pt-10 md:pt-14">
         <Section id="sg-hero-states" title="Hero deal: no photo, and expired">
-          <div data-theme="dark" className="rounded-md bg-ink p-5 text-foreground md:p-10">
+          <div className="rounded-lg bg-panel p-5 text-foreground md:p-10">
             <HeroDeal deal={heroDeal} lowestIn90Days />
           </div>
-          <div data-theme="dark" className="mt-8 rounded-md bg-ink p-5 text-foreground md:p-10">
+          <div className="mt-8 rounded-lg bg-panel p-5 text-foreground md:p-10">
             <HeroDeal deal={heroExpired} />
           </div>
         </Section>
@@ -217,7 +219,7 @@ export default function StyleguidePage() {
           </div>
         </Section>
 
-        <Section id="sg-dark" title="Dark scope">
+        <Section id="sg-dark" title="Dark theme (opt-in)">
           <div data-theme="dark" className="rounded-md bg-background p-5 text-foreground md:p-8">
             <Cards dark />
             <div className="mt-10 flex flex-wrap gap-6">

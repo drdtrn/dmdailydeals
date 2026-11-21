@@ -18,14 +18,15 @@
 /*
  * DMDailyDeals design tokens (Tailwind 4, CSS-first; there is no tailwind.config.*).
  *
- * Palette: ink #0B0B0C, paper #FAFAF7, a warm grey ramp and one accent red #C8102E, all
- * converted to OKLCH. Source of truth for the look: plans/design/*.dc.html.
+ * Palette: ink #0B0B0C, porcelain page #F6F5F1, white raised surfaces #FFFFFF with a #E6E3DC
+ * hairline, a stone panel #ECE9E2 for the hero band and newsletter, a warm grey ramp and one
+ * accent red #C8102E (always a background behind white text), all in OKLCH.
  *
  * Themes:
- *   - Light is the default. Dark follows the OS (prefers-color-scheme) unless <html data-theme>
- *     says otherwise; ThemeToggle writes data-theme and a cookie; the root layout renders the saved value server-side.
- *   - Any element can force a scope with data-theme="dark" | "light". The hero band and the
- *     header use data-theme="dark" so they are dark in both modes.
+ *   - Light is the product look and the default for everyone; the OS preference is ignored.
+ *     Dark is an explicit opt-in: ThemeToggle writes <html data-theme="dark"> and a cookie, and
+ *     the root layout renders the saved value server-side.
+ *   - Any element can force a scope with data-theme="dark" | "light".
  *   - Components use semantic tokens (bg-background, text-muted-foreground, ...) so they follow
  *     whichever scope they sit in. Only brand marks use the raw ink / paper tokens.
  */
@@ -54,7 +55,7 @@
   --container-page: 75rem; /* 1200px */
   --spacing-gutter: clamp(1.25rem, 4vw, 3rem);
 
-  --shadow-soft: 0 1px 2px oklch(15% 0 0 / 0.06), 0 10px 24px -14px oklch(15% 0 0 / 0.22);
+  --shadow-soft: 0 1px 2px rgb(20 18 14 / 0.04), 0 4px 16px rgb(20 18 14 / 0.05);
   --shadow-pop: 0 2px 4px oklch(15% 0 0 / 0.1), 0 18px 40px -16px oklch(15% 0 0 / 0.35);
 
   --ease-snappy: cubic-bezier(0.2, 0, 0, 1);
@@ -66,30 +67,33 @@
 
   /* Brand constants (never flip with the theme). */
   --ink: oklch(15% 0.0021 286.1); /* #0B0B0C */
-  --paper: oklch(98.4% 0.004 106.5); /* #FAFAF7 */
+  --paper: oklch(98.4% 0.004 106.5); /* #FAFAF7, brand constant (marks on ink) */
   --deal: oklch(53% 0.2074 22.3); /* #C8102E, accent red */
   --deal-foreground: oklch(100% 0 0);
 
-  --background: var(--paper);
+  --background: oklch(96.7% 0.0045 95); /* #F6F5F1 porcelain */
   --foreground: var(--ink);
-  --soft-foreground: oklch(34.4% 0.007 95.3); /* #3A3935, body copy on a card */
-  --muted-foreground: oklch(47.5% 0.0083 88.7); /* #5E5C57, 6.6:1 on paper */
-  --subtle-foreground: oklch(52.1% 0.0081 88.7); /* #6B6964, 5.2:1 on paper, was-price */
-  --surface: oklch(93.7% 0.0083 91.5); /* #ECEAE4, image wells */
-  --card: var(--background);
+  --raised: oklch(100% 0 0); /* #FFFFFF cards, header, panels */
+  --panel: oklch(93.4% 0.0075 91.5); /* #ECE9E2 stone: hero band, newsletter */
+  --panel-end: oklch(91.6% 0.0102 88); /* #E8E4DB */
+  --soft-foreground: oklch(34.4% 0.007 95.3); /* #3A3935, body copy */
+  --muted-foreground: oklch(47.5% 0.0083 88.7); /* #5E5C57, AA on porcelain, white and stone */
+  --subtle-foreground: oklch(50% 0.0081 88.7); /* #66645F, was-price and meta; AA on stone */
+  --surface: oklch(95.3% 0.0058 91.5); /* #F1EFEA, image wells and secondary fills */
+  --card: var(--raised);
   --card-foreground: var(--foreground);
-  --popover: var(--background);
+  --popover: var(--raised);
   --popover-foreground: var(--foreground);
   --primary: var(--ink);
-  --primary-foreground: var(--paper);
+  --primary-foreground: oklch(100% 0 0);
   --secondary: var(--surface);
   --secondary-foreground: var(--foreground);
   --muted: var(--surface);
-  --accent: oklch(93.7% 0.0083 91.5);
+  --accent: oklch(95.3% 0.0058 91.5);
   --accent-foreground: var(--foreground);
   --destructive: oklch(53% 0.2074 22.3);
   --destructive-foreground: oklch(100% 0 0);
-  --border: oklch(91.3% 0.0084 91.5); /* #E4E2DC */
+  --border: oklch(91.6% 0.0087 88); /* #E6E3DC hairline */
   --border-strong: oklch(82.7% 0.0115 89.7); /* #C9C6BE */
   --input: oklch(82.7% 0.0115 89.7);
   --ring: var(--ink);
@@ -100,16 +104,21 @@
   --error: oklch(75% 0.15 25);
 }
 
-/* Dark: ink-adjacent page, paper text. #141413 page keeps the (ink) hero band distinct. */
+/* Dark (explicit opt-in only): #141413 page, #1C1C1A raised surfaces, paper text. */
 [data-theme='dark'] {
   color-scheme: dark;
 
   --background: oklch(19.1% 0.002 0); /* #141413 */
   --foreground: var(--paper);
+  --raised: oklch(22.6% 0.0038 106.7); /* #1C1C1A */
+  --card: var(--raised);
+  --popover: var(--raised);
+  --panel: oklch(24.5% 0.0038 106.7); /* #212120 */
+  --panel-end: oklch(22.6% 0.0038 106.7);
   --soft-foreground: oklch(86.7% 0.0114 89.7); /* #D6D3CB */
   --muted-foreground: oklch(78.9% 0.0116 89.7); /* #BDBAB2 */
   --subtle-foreground: oklch(68.6% 0.0103 93.6); /* #9C9A93 */
-  --surface: oklch(22.6% 0.0038 106.7); /* #1C1C1A */
+  --surface: oklch(26% 0.0038 106.6); /* #262624 */
   --primary: var(--paper);
   --primary-foreground: var(--ink);
   --accent: oklch(28.4% 0.0036 106.6); /* #2A2A28 */
@@ -126,33 +135,6 @@
   --error: oklch(45% 0.1 25);
 }
 
-/* No explicit choice (and no JS): follow the OS. */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme]) {
-    color-scheme: dark;
-
-    --background: oklch(19.1% 0.002 0);
-    --foreground: var(--paper);
-    --soft-foreground: oklch(86.7% 0.0114 89.7);
-    --muted-foreground: oklch(78.9% 0.0116 89.7);
-    --subtle-foreground: oklch(68.6% 0.0103 93.6);
-    --surface: oklch(22.6% 0.0038 106.7);
-    --primary: var(--paper);
-    --primary-foreground: var(--ink);
-    --accent: oklch(28.4% 0.0036 106.6);
-    --destructive: oklch(70% 0.19 22);
-    --destructive-foreground: var(--ink);
-    --border: oklch(28.4% 0.0036 106.6);
-    --border-strong: oklch(40.5% 0.0067 95.2);
-    --input: oklch(40.5% 0.0067 95.2);
-    --ring: var(--paper);
-    --logo-filter: invert(1);
-    --success: oklch(28% 0.1 200);
-    --warning: oklch(35% 0.08 70);
-    --error: oklch(45% 0.1 25);
-  }
-}
-
 @theme inline {
   --color-ink: var(--ink);
   --color-paper: var(--paper);
@@ -164,6 +146,9 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-subtle-foreground: var(--subtle-foreground);
   --color-surface: var(--surface);
+  --color-raised: var(--raised);
+  --color-panel: var(--panel);
+  --color-panel-end: var(--panel-end);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
   --color-popover: var(--popover);
@@ -259,14 +244,6 @@
 }
 [data-theme='dark'] .theme-icon-sun {
   display: inline-block;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme]) .theme-icon-moon {
-    display: none;
-  }
-  :root:not([data-theme]) .theme-icon-sun {
-    display: inline-block;
-  }
 }
 
 /* Rich text (pages and posts) follows the tokens, so it needs no prose-invert. */

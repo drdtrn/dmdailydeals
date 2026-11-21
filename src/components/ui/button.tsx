@@ -5,7 +5,7 @@ import * as React from 'react'
 
 /**
  * shadcn Button (Radix flavour), restyled to the DMDailyDeals system: square 2px corners, ink
- * fill that flips to paper inside a dark scope (the hero band). No "use client": the variants
+ * fill with white text (flips to paper in the opt-in dark theme). No "use client": the variants
  * are called from server components (DealCard, HeroDeal).
  */
 const buttonVariants = cva(
@@ -16,7 +16,7 @@ const buttonVariants = cva(
         default: 'bg-primary text-primary-foreground hover:bg-primary/85',
         destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
         outline:
-          'border border-primary bg-transparent text-foreground hover:bg-primary hover:text-primary-foreground',
+          'border border-primary bg-card text-foreground hover:bg-primary hover:text-primary-foreground',
         secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/70',
         ghost: 'text-foreground hover:bg-accent hover:text-accent-foreground',
         link: 'text-foreground underline underline-offset-4 hover:no-underline',

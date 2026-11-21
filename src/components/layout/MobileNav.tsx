@@ -25,7 +25,7 @@ export function MobileNav({ items }: { items: NavLink[] }) {
       </summary>
       <nav
         aria-label="Menu"
-        className="absolute top-full right-0 z-30 w-[min(20rem,calc(100vw-2.5rem))] border border-border bg-background py-2 text-foreground shadow-pop"
+        className="absolute top-full right-0 z-30 w-[min(20rem,calc(100vw-2.5rem))] rounded-lg border border-border bg-card py-2 text-foreground shadow-pop"
       >
         <ul>
           {items.map((item) => (
