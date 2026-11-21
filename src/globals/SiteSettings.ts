@@ -2,6 +2,7 @@ import type { GlobalAfterChangeHook, GlobalConfig } from 'payload'
 
 import { anyone } from '../access/anyone'
 import { authenticated } from '../access/authenticated'
+import { staffOnlyField } from '../access/staffOnlyField'
 import { isValidDropTime, isValidTimeZone } from '../lib/drops/time'
 import { safeHttpUrl } from '../lib/safeUrl'
 import { revalidate } from '../lib/revalidate'
@@ -69,6 +70,57 @@ export const SiteSettings: GlobalConfig = {
         !value || safeHttpUrl(value)
           ? true
           : 'Use a full http(s) URL, e.g. https://t.me/dmdailydeals',
+    },
+    {
+      // Internal: staff-only read so the public global endpoint never exposes it. The API keys are
+      // NOT here; they live in the environment (see .env.example). This group holds the choices.
+      name: 'ai',
+      label: 'AI blog drafts',
+      type: 'group',
+      access: { read: staffOnlyField },
+      admin: {
+        description:
+          'Controls the blog draft generator. Keys are set in the environment, never here.',
+      },
+      fields: [
+        {
+          name: 'enabled',
+          type: 'checkbox',
+          defaultValue: false,
+          label: 'Generate drafts from briefs',
+          admin: {
+            description:
+              'Off by default. A new brief fails with a clear message while this is off. Also needs the API keys in the environment.',
+          },
+        },
+        {
+          name: 'provider',
+          type: 'select',
+          options: [
+            { label: 'DeepSeek', value: 'deepseek' },
+            { label: 'OpenAI', value: 'openai' },
+          ],
+          admin: { description: 'Leave empty to use AI_PROVIDER from the environment.' },
+        },
+        {
+          name: 'model',
+          type: 'text',
+          admin: {
+            description:
+              "Leave empty for the provider's default model (deepseek-flash, gpt-6-luna). The AI_MODEL environment variable overrides this.",
+          },
+        },
+        {
+          name: 'monthlyDraftCap',
+          type: 'number',
+          defaultValue: 20,
+          min: 0,
+          admin: {
+            description:
+              'Most drafts that may be started per calendar month (UTC). Protects the budget.',
+          },
+        },
+      ],
     },
     {
       name: 'newsletterEnabled',

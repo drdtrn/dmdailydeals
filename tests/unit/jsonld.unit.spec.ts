@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   buildArticle,
+  buildBlogPosting,
   buildBreadcrumbList,
   buildCollectionPage,
   buildItemList,
@@ -301,5 +302,46 @@ describe('JSON-LD builders', () => {
       expect(out).toContain('\\u003c/script>')
       expect(JSON.parse(out)).toEqual({ name: '</script><script>alert(1)</script>' })
     })
+  })
+})
+
+describe('buildBlogPosting', () => {
+  const input = {
+    headline: 'How to pick a carry-on',
+    description: 'A short guide.',
+    path: '/blog/how-to-pick-a-carry-on',
+    datePublished: '2026-11-01T10:00:00.000Z',
+    dateModified: '2026-11-05T10:00:00.000Z',
+    section: 'Travel',
+  }
+
+  it('uses a Person author with name and sameAs, and the Organization as publisher', () => {
+    const post = buildBlogPosting(ORIGIN, {
+      ...input,
+      author: { name: 'Real Person', sameAs: ['https://example.com/real-person'] },
+    })
+    expect(post['@type']).toBe('BlogPosting')
+    expect(post).toMatchObject({
+      headline: input.headline,
+      url: `${ORIGIN}/blog/how-to-pick-a-carry-on`,
+      mainEntityOfPage: `${ORIGIN}/blog/how-to-pick-a-carry-on`,
+      datePublished: input.datePublished,
+      dateModified: input.dateModified,
+      articleSection: 'Travel',
+      author: {
+        '@type': 'Person',
+        name: 'Real Person',
+        sameAs: ['https://example.com/real-person'],
+      },
+      publisher: { '@type': 'Organization', name: 'DMDailyDeals' },
+    })
+    expect((post.image as string[])[0]).toMatch(/^https:\/\//)
+  })
+
+  it('falls back to the Organization without a byline and never adds AI or FAQ properties', () => {
+    const post = buildBlogPosting(ORIGIN, { ...input, author: null })
+    expect(post.author).toMatchObject({ '@type': 'Organization' })
+    const json = serializeJsonLd(post)
+    expect(json).not.toMatch(/aiAssisted|reviewedBy|FAQPage|isBasedOn|creativeWorkStatus/i)
   })
 })

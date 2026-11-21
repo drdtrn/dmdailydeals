@@ -4,6 +4,7 @@ import path from 'path'
 import { buildConfig, PayloadRequest } from 'payload'
 import { fileURLToPath } from 'url'
 
+import { BlogBriefs } from './collections/BlogBriefs'
 import { Categories } from './collections/Categories'
 import { Clicks } from './collections/Clicks'
 import { Deals } from './collections/Deals'
@@ -20,6 +21,7 @@ import { Footer } from './Footer/config'
 import { Header } from './Header/config'
 import { AlwaysOnOffer } from './globals/AlwaysOnOffer'
 import { SiteSettings } from './globals/SiteSettings'
+import { generateBlogDraft } from './jobs/generateBlogDraft'
 import { pingIndexNow } from './jobs/pingIndexNow'
 import { postDropToTelegram } from './jobs/postDropToTelegram'
 import { publishDueDrops } from './jobs/publishDueDrops'
@@ -109,6 +111,7 @@ export default buildConfig({
     Clicks,
     Events,
     Subscribers,
+    BlogBriefs,
   ],
   cors: [getServerSideURL()].filter(Boolean),
   globals: [Header, Footer, SiteSettings, AlwaysOnOffer],
@@ -136,7 +139,8 @@ export default buildConfig({
     },
     // No `autoRun` and no `jobs:handle-schedules`: the only runner is the HTTP endpoint
     // GET /api/payload-jobs/run (cron container / `pnpm cron:dev`), which also handles schedules.
-    // Queues: `drops` (publishDueDrops), `default` (follow-ups, schedulePublish), `ai` (Phase 8).
-    tasks: [publishDueDrops, revalidateDrop, pingIndexNow, postDropToTelegram],
+    // Queues: `drops` (publishDueDrops), `default` (follow-ups, schedulePublish), `ai` (generateBlogDraft:
+    // run by its own cron loop, one job at a time, so a slow AI job can never delay a drop).
+    tasks: [publishDueDrops, revalidateDrop, pingIndexNow, postDropToTelegram, generateBlogDraft],
   },
 })

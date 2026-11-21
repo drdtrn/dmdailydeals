@@ -1,16 +1,19 @@
 import { cn } from '@/utilities/ui'
 import Link from 'next/link'
-import React, { Fragment } from 'react'
+import React from 'react'
 
 import type { Post } from '@/payload-types'
 
 import { Media } from '@/components/Media'
+import { authorOfPost } from '@/lib/authors'
+import { formatShortDate } from '@/lib/format'
 
-export type CardPostData = Pick<Post, 'slug' | 'categories' | 'meta' | 'title'>
+export type CardPostData = Pick<Post, 'slug' | 'category' | 'meta' | 'title'> &
+  Partial<Pick<Post, 'heroImage' | 'publishedAt' | 'populatedAuthor'>>
 
 /**
- * Editorial card for a blog post (server component). The whole card is clickable through a
- * stretched link, so it needs no client code or refs.
+ * Editorial card for a blog post (server component): category, title, summary, date and author.
+ * The whole card is clickable through a stretched link, so it needs no client code or refs.
  */
 export const Card: React.FC<{
   alignItems?: 'center'
@@ -22,10 +25,12 @@ export const Card: React.FC<{
 }> = (props) => {
   const { className, doc, showCategories, title: titleFromProps } = props
 
-  const { slug, categories, meta, title } = doc || {}
+  const { slug, category, meta, title, heroImage, publishedAt } = doc || {}
   const { description, image: metaImage } = meta || {}
+  const image = [metaImage, heroImage].find((i) => i && typeof i === 'object')
+  const categoryTitle = typeof category === 'object' && category ? category.title : null
+  const author = doc ? authorOfPost(doc) : null
 
-  const hasCategories = categories && Array.isArray(categories) && categories.length > 0
   const titleToUse = titleFromProps || title
   const sanitizedDescription = description?.replace(/\s/g, ' ') // replace non-breaking space with white space
   const href = `/blog/${slug}`
@@ -38,34 +43,19 @@ export const Card: React.FC<{
       )}
     >
       <div className="relative w-full">
-        {!metaImage && (
+        {!image && (
           <div className="flex aspect-[4/3] items-center justify-center bg-surface text-sm text-muted-foreground">
             No image
           </div>
         )}
-        {metaImage && typeof metaImage !== 'string' && <Media resource={metaImage} size="33vw" />}
+        {image && typeof image !== 'string' && typeof image !== 'number' && (
+          <Media resource={image} size="33vw" />
+        )}
       </div>
       <div className="p-4">
-        {showCategories && hasCategories && (
+        {showCategories && categoryTitle && (
           <div className="mb-3 text-xs tracking-[0.12em] text-muted-foreground uppercase">
-            {categories?.map((category, index) => {
-              if (typeof category === 'object') {
-                const { title: titleFromCategory } = category
-
-                const categoryTitle = titleFromCategory || 'Untitled category'
-
-                const isLast = index === categories.length - 1
-
-                return (
-                  <Fragment key={index}>
-                    {categoryTitle}
-                    {!isLast && <Fragment>, &nbsp;</Fragment>}
-                  </Fragment>
-                )
-              }
-
-              return null
-            })}
+            {categoryTitle}
           </div>
         )}
         {titleToUse && (
@@ -76,6 +66,15 @@ export const Card: React.FC<{
           </h3>
         )}
         {description && <p className="mt-2 text-soft-foreground">{sanitizedDescription}</p>}
+        {(publishedAt || author) && (
+          <p className="mt-3 text-xs text-subtle-foreground">
+            {publishedAt ? (
+              <time dateTime={publishedAt}>{formatShortDate(publishedAt)}</time>
+            ) : null}
+            {publishedAt && author ? ' · ' : null}
+            {author ? <>By {author.displayName}</> : null}
+          </p>
+        )}
       </div>
     </article>
   )

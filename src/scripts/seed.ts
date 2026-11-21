@@ -11,11 +11,13 @@
  * already exist. Run it on a freshly migrated database with `PAYLOAD_DB_PUSH=false pnpm seed`, or
  * on the dev database (push mode) with plain `pnpm seed`.
  */
+import crypto from 'crypto'
 import fs from 'fs'
 import sharp from 'sharp'
 
 import type { CollectionSlug, Payload, Where } from 'payload'
 
+import { markdownToLexical } from '../ai/draft/markdown'
 import { buildProductKey } from '../lib/deals/productKey'
 import { getDropSettings } from '../lib/drops/settings'
 import { addDaysToYmd, computePublishAt, todayInTimezone } from '../lib/drops/time'
@@ -709,6 +711,77 @@ async function seed() {
     })
   }
   log(`pages: ${LEGAL_PAGES.map((p) => slugify(p.title)).join(', ')}`)
+
+  // Example author and one example guide (human-written, not AI-assisted). Clearly dev data: the
+  // author's name says so and the password is random (nobody can sign in as this user).
+  const EXAMPLE_AUTHOR_EMAIL = 'example-author@seed.example.com'
+  let author = await findOne(payload, 'users', { email: { equals: EXAMPLE_AUTHOR_EMAIL } })
+  if (!author) {
+    const avatar = await upsertMedia(
+      payload,
+      'example-author-avatar',
+      'Placeholder avatar for the example author',
+      await placeholderImage('Example author', 'Dev data', '#3b3b3b'),
+    )
+    author = await payload.create({
+      collection: 'users',
+      data: {
+        email: EXAMPLE_AUTHOR_EMAIL,
+        password: crypto.randomBytes(24).toString('hex'),
+        name: 'Example Author',
+        displayName: 'EXAMPLE AUTHOR (dev data, not a real person)',
+        bio: 'EXAMPLE COPY. Replace with a real person. This byline exists only so the blog pages can be developed and tested.',
+        avatar,
+        sameAs: [{ url: 'https://example.com/example-author' }],
+      },
+      overrideAccess: true,
+      context,
+    })
+  }
+  const EXAMPLE_POST_SLUG = 'example-guide-how-to-pick-a-carry-on'
+  const examplePost = await findOne(payload, 'posts', { slug: { equals: EXAMPLE_POST_SLUG } })
+  if (!examplePost) {
+    await payload.create({
+      collection: 'posts',
+      data: {
+        title: 'EXAMPLE GUIDE: how to pick a carry-on',
+        slug: EXAMPLE_POST_SLUG,
+        category: categoryIds.get('Travel')!,
+        author: author.id,
+        aiAssisted: false,
+        content: (await markdownToLexical(
+          payload,
+          [
+            'EXAMPLE COPY. Replace this guide with original text. It exists so the blog pages can be developed and tested.',
+            '',
+            '## Check the size limit first',
+            '',
+            'Airlines publish their carry-on dimensions, and the limits differ between carriers. Measure the suitcase **with** its wheels and handle before you compare prices. See the current [travel deals](/deals/travel) for options.',
+            '',
+            '## What to compare',
+            '',
+            '- Weight when empty',
+            '- Wheel quality',
+            '- Whether it expands',
+            '',
+            'More steps: read the [affiliate disclosure](/disclosure) and check the [example source](https://example.com/source).',
+          ].join('\n'),
+        )) as never,
+        sources: [{ title: 'Example source (not a real page)', url: 'https://example.com/source' }],
+        relatedDeals: [dealIds[6], dealIds[7]],
+        meta: {
+          title: 'EXAMPLE GUIDE: how to pick a carry-on',
+          description:
+            'EXAMPLE COPY. A short example guide on choosing a carry-on suitcase, used to develop and test the blog pages.',
+        },
+        publishedAt: new Date(Date.now() - 2 * 86_400_000).toISOString(),
+        _status: 'published',
+      },
+      overrideAccess: true,
+      context,
+    })
+  }
+  log('blog: example author and example guide')
 
   log('done')
 }

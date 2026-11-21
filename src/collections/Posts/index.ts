@@ -1,31 +1,17 @@
 import type { CollectionConfig } from 'payload'
 
-import {
-  BlocksFeature,
-  FixedToolbarFeature,
-  HeadingFeature,
-  HorizontalRuleFeature,
-  InlineToolbarFeature,
-  lexicalEditor,
-} from '@payloadcms/richtext-lexical'
+import { slugField } from 'payload'
 
 import { authenticated } from '../../access/authenticated'
 import { authenticatedOrPublished } from '../../access/authenticatedOrPublished'
-import { Banner } from '../../blocks/Banner/config'
-import { Code } from '../../blocks/Code/config'
-import { MediaBlock } from '../../blocks/MediaBlock/config'
+import { staffOnlyField } from '../../access/staffOnlyField'
+import { seoTab } from '../../fields/seo'
+import { safeHttpUrl } from '../../lib/safeUrl'
 import { generatePreviewPath } from '../../utilities/generatePreviewPath'
-import { populateAuthors } from './hooks/populateAuthors'
+import { postContentEditor } from './editor'
+import { populateAuthor } from './hooks/populateAuthor'
+import { publishGate } from './hooks/publishGate'
 import { revalidateDelete, revalidatePost } from './hooks/revalidatePost'
-
-import {
-  MetaDescriptionField,
-  MetaImageField,
-  MetaTitleField,
-  OverviewField,
-  PreviewField,
-} from '@payloadcms/plugin-seo/fields'
-import { slugField } from 'payload'
 
 export const Posts: CollectionConfig<'posts'> = {
   slug: 'posts',
@@ -35,20 +21,21 @@ export const Posts: CollectionConfig<'posts'> = {
     read: authenticatedOrPublished,
     update: authenticated,
   },
-  // This config controls what's populated by default when a post is referenced
-  // https://payloadcms.com/docs/queries/select#defaultpopulate-collection-config-property
-  // Type safe if the collection slug generic is passed to `CollectionConfig` - `CollectionConfig<'posts'>
+  // What is populated when a post is referenced from another document. Nothing internal here:
+  // `aiAssisted`, `reviewedBy` and the brief are not part of it (and are staff-only fields anyway).
   defaultPopulate: {
     title: true,
     slug: true,
-    categories: true,
+    category: true,
+    heroImage: true,
+    publishedAt: true,
     meta: {
       image: true,
       description: true,
     },
   },
   admin: {
-    defaultColumns: ['title', 'slug', 'updatedAt'],
+    defaultColumns: ['title', 'category', '_status', 'aiAssisted', 'reviewedBy', 'updatedAt'],
     livePreview: {
       url: ({ data, req }) =>
         generatePreviewPath({
@@ -75,99 +62,73 @@ export const Posts: CollectionConfig<'posts'> = {
       type: 'tabs',
       tabs: [
         {
+          label: 'Content',
           fields: [
-            {
-              name: 'heroImage',
-              type: 'upload',
-              relationTo: 'media',
-            },
+            { name: 'heroImage', type: 'upload', relationTo: 'media' },
             {
               name: 'content',
               type: 'richText',
-              editor: lexicalEditor({
-                features: ({ rootFeatures }) => {
-                  return [
-                    ...rootFeatures,
-                    HeadingFeature({ enabledHeadingSizes: ['h1', 'h2', 'h3', 'h4'] }),
-                    BlocksFeature({ blocks: [Banner, Code, MediaBlock] }),
-                    FixedToolbarFeature(),
-                    InlineToolbarFeature(),
-                    HorizontalRuleFeature(),
-                  ]
-                },
-              }),
+              editor: postContentEditor,
               label: false,
               required: true,
             },
           ],
-          label: 'Content',
         },
         {
+          label: 'Sources and links',
           fields: [
+            {
+              name: 'sources',
+              type: 'array',
+              labels: { singular: 'Source', plural: 'Sources' },
+              admin: {
+                description:
+                  'Pages the guide is based on. Shown as a "Sources" list under the post.',
+              },
+              fields: [
+                {
+                  type: 'row',
+                  fields: [
+                    { name: 'title', type: 'text', required: true, admin: { width: '40%' } },
+                    {
+                      name: 'url',
+                      type: 'text',
+                      required: true,
+                      admin: { width: '60%' },
+                      validate: (value: string | null | undefined) =>
+                        value && safeHttpUrl(value) ? true : 'Use a full http(s) URL',
+                    },
+                  ],
+                },
+              ],
+            },
+            {
+              name: 'relatedDeals',
+              type: 'relationship',
+              relationTo: 'deals',
+              hasMany: true,
+              admin: {
+                description:
+                  'Live deals shown under the post (with the affiliate disclosure). Only deals that are live are displayed.',
+              },
+            },
             {
               name: 'relatedPosts',
               type: 'relationship',
-              admin: {
-                position: 'sidebar',
-              },
-              filterOptions: ({ id }) => {
-                return {
-                  id: {
-                    not_in: [id],
-                  },
-                }
-              },
-              hasMany: true,
               relationTo: 'posts',
-            },
-            {
-              name: 'categories',
-              type: 'relationship',
-              admin: {
-                position: 'sidebar',
-              },
               hasMany: true,
-              relationTo: 'categories',
+              filterOptions: ({ id }) => ({ id: { not_in: [id] } }),
             },
           ],
-          label: 'Meta',
         },
-        {
-          name: 'meta',
-          label: 'SEO',
-          fields: [
-            OverviewField({
-              titlePath: 'meta.title',
-              descriptionPath: 'meta.description',
-              imagePath: 'meta.image',
-            }),
-            MetaTitleField({
-              hasGenerateFn: true,
-            }),
-            MetaImageField({
-              relationTo: 'media',
-            }),
-
-            MetaDescriptionField({}),
-            PreviewField({
-              // if the `generateUrl` function is configured
-              hasGenerateFn: true,
-
-              // field paths to match the target field for data
-              titlePath: 'meta.title',
-              descriptionPath: 'meta.description',
-            }),
-          ],
-        },
+        seoTab(),
       ],
     },
     {
       name: 'publishedAt',
       type: 'date',
       admin: {
-        date: {
-          pickerAppearance: 'dayAndTime',
-        },
+        date: { pickerAppearance: 'dayAndTime' },
         position: 'sidebar',
       },
       hooks: {
@@ -182,43 +143,79 @@ export const Posts: CollectionConfig<'posts'> = {
       },
     },
     {
-      name: 'authors',
+      // One category per guide: it decides the hub the guide appears on ("Latest guides") and its
+      // breadcrumb. A guide that spans categories is two guides.
+      name: 'category',
       type: 'relationship',
+      relationTo: 'categories',
+      admin: { position: 'sidebar' },
+    },
+    {
+      // A real person. The public fields come from the user's profile (see `populatedAuthor`).
+      name: 'author',
+      type: 'relationship',
+      relationTo: 'users',
+      admin: { position: 'sidebar' },
+    },
+    {
+      // Virtual (never stored): the author's PUBLIC profile fields, filled by `populateAuthor`.
+      // The `users` collection is staff-only, so this is how public pages get a byline.
+      name: 'populatedAuthor',
+      type: 'json',
+      virtual: true,
+      access: { create: () => false, update: () => false },
+      admin: { disabled: true, readOnly: true },
+    },
+    // --- Internal review fields. Staff-only at the FIELD level: anonymous API responses omit them.
+    {
+      name: 'aiAssisted',
+      type: 'checkbox',
+      defaultValue: false,
+      access: { read: staffOnlyField },
       admin: {
         position: 'sidebar',
+        description:
+          'Internal only. Never shown on the site or returned to the public. While this is on, the post cannot be published until "Reviewed by" is set.',
       },
-      hasMany: true,
-      relationTo: 'users',
     },
-    // This field is only used to populate the user data via the `populateAuthors` hook
-    // This is because the `user` collection has access control locked to protect user privacy
-    // GraphQL will also not return mutated user data that differs from the underlying schema
     {
-      name: 'populatedAuthors',
-      type: 'array',
-      access: {
-        update: () => false,
-      },
+      name: 'reviewedBy',
+      type: 'relationship',
+      relationTo: 'users',
+      access: { read: staffOnlyField },
       admin: {
-        disabled: true,
-        readOnly: true,
+        position: 'sidebar',
+        description:
+          'The person who read and approved this post. Required to publish an AI-assisted post.',
       },
-      fields: [
-        {
-          name: 'id',
-          type: 'text',
-        },
-        {
-          name: 'name',
-          type: 'text',
-        },
-      ],
+    },
+    {
+      name: 'reviewedAt',
+      type: 'date',
+      access: { read: staffOnlyField },
+      admin: {
+        position: 'sidebar',
+        date: { pickerAppearance: 'dayAndTime' },
+        description: 'Set automatically when a reviewer is chosen.',
+      },
+    },
+    {
+      // The brief this draft came from (the brief's `post` field points here).
+      name: 'brief',
+      type: 'join',
+      collection: 'blog-briefs',
+      on: 'post',
+      defaultLimit: 1,
+      maxDepth: 0,
+      access: { read: staffOnlyField },
+      admin: { position: 'sidebar', defaultColumns: ['topic', 'status', 'createdAt'] },
     },
     slugField(),
   ],
   hooks: {
+    beforeChange: [publishGate],
     afterChange: [revalidatePost],
-    afterRead: [populateAuthors],
+    afterRead: [populateAuthor],
     afterDelete: [revalidateDelete],
   },
   versions: {

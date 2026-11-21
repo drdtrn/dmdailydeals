@@ -79,6 +79,7 @@ export interface Config {
     clicks: Click;
     events: Event;
     subscribers: Subscriber;
+    'blog-briefs': BlogBrief;
     redirects: Redirect;
     'payload-kv': PayloadKv;
     'payload-jobs': PayloadJob;
@@ -88,6 +89,9 @@ export interface Config {
     'payload-migrations': PayloadMigration;
   };
   collectionsJoins: {
+    posts: {
+      brief: 'blog-briefs';
+    };
     'payload-folders': {
       documentsAndFolders: 'payload-folders' | 'media';
     };
@@ -105,6 +109,7 @@ export interface Config {
     clicks: ClicksSelect<false> | ClicksSelect<true>;
     events: EventsSelect<false> | EventsSelect<true>;
     subscribers: SubscribersSelect<false> | SubscribersSelect<true>;
+    'blog-briefs': BlogBriefsSelect<false> | BlogBriefsSelect<true>;
     redirects: RedirectsSelect<false> | RedirectsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
@@ -142,6 +147,7 @@ export interface Config {
       revalidateDrop: TaskRevalidateDrop;
       pingIndexNow: TaskPingIndexNow;
       postDropToTelegram: TaskPostDropToTelegram;
+      generateBlogDraft: TaskGenerateBlogDraft;
       schedulePublish: TaskSchedulePublish;
       inline: {
         input: unknown;
@@ -261,8 +267,21 @@ export interface Post {
     };
     [k: string]: unknown;
   };
+  /**
+   * Pages the guide is based on. Shown as a "Sources" list under the post.
+   */
+  sources?:
+    | {
+        title: string;
+        url: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Live deals shown under the post (with the affiliate disclosure). Only deals that are live are displayed.
+   */
+  relatedDeals?: (number | Deal)[] | null;
   relatedPosts?: (number | Post)[] | null;
-  categories?: (number | Category)[] | null;
   meta?: {
     title?: string | null;
     /**
@@ -272,13 +291,34 @@ export interface Post {
     description?: string | null;
   };
   publishedAt?: string | null;
-  authors?: (number | User)[] | null;
-  populatedAuthors?:
+  category?: (number | null) | Category;
+  author?: (number | null) | User;
+  populatedAuthor?:
     | {
-        id?: string | null;
-        name?: string | null;
-      }[]
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
     | null;
+  /**
+   * Internal only. Never shown on the site or returned to the public. While this is on, the post cannot be published until "Reviewed by" is set.
+   */
+  aiAssisted?: boolean | null;
+  /**
+   * The person who read and approved this post. Required to publish an AI-assisted post.
+   */
+  reviewedBy?: (number | null) | User;
+  /**
+   * Set automatically when a reviewer is chosen.
+   */
+  reviewedAt?: string | null;
+  brief?: {
+    docs?: (number | BlogBrief)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
   /**
    * When enabled, the slug will auto-generate from the title field on save and autosave.
    */
@@ -377,6 +417,110 @@ export interface FolderInterface {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "deals".
+ */
+export interface Deal {
+  id: number;
+  title: string;
+  store: number | Store;
+  category: number | Category;
+  /**
+   * Plain product page URL (no affiliate or tracking parameters).
+   */
+  productUrl: string;
+  image?: (number | null) | Media;
+  price: number;
+  /**
+   * Regular price before the discount.
+   */
+  wasPrice?: number | null;
+  /**
+   * ISO 4217 code, e.g. USD.
+   */
+  currency: string;
+  /**
+   * When you last confirmed this price. Shown as "Price checked <time>". Set automatically when the price changes.
+   */
+  priceCheckedAt?: string | null;
+  /**
+   * Why this is a deal, in your own words (at least 140 characters). Original copy only; do not paste the merchant description.
+   */
+  editorNote: string;
+  couponCode?: string | null;
+  meta?: {
+    title?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (number | null) | Media;
+    description?: string | null;
+  };
+  /**
+   * Lifecycle: expired and sold-out deals keep their page. "Draft" keeps a published deal hidden from the public.
+   */
+  status: 'draft' | 'live' | 'expired' | 'sold-out';
+  /**
+   * Defaults to now.
+   */
+  startsAt?: string | null;
+  /**
+   * Defaults to the next drop time (see Site settings).
+   */
+  expiresAt?: string | null;
+  publishedAt?: string | null;
+  /**
+   * When enabled, the slug will auto-generate from the title field on save and autosave.
+   */
+  generateSlug?: boolean | null;
+  slug: string;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "stores".
+ */
+export interface Store {
+  id: number;
+  name: string;
+  /**
+   * Bare domain, e.g. example.com
+   */
+  domain: string;
+  logo?: (number | null) | Media;
+  /**
+   * Original copy for the store hub. Do not paste the merchant blurb.
+   */
+  description?: string | null;
+  affiliateProgram:
+    'none' | 'ebay' | 'aliexpress' | 'amazon' | 'skimlinks' | 'sovrn' | 'awin' | 'impact' | 'cj' | 'direct';
+  /**
+   * Switching to Active monetises every existing deal from this store.
+   */
+  affiliateStatus: 'none' | 'pending' | 'active';
+  /**
+   * Outbound link pattern. {url} is the raw product URL, {encodedUrl} is URL-encoded (for network deep links).
+   */
+  linkTemplate: string;
+  /**
+   * When enabled, the slug will auto-generate from the title field on save and autosave.
+   */
+  generateSlug?: boolean | null;
+  slug: string;
+  meta?: {
+    title?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (number | null) | Media;
+    description?: string | null;
+  };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "categories".
  */
 export interface Category {
@@ -418,6 +562,24 @@ export interface Category {
 export interface User {
   id: number;
   name?: string | null;
+  /**
+   * The name shown in blog bylines. Use a real name.
+   */
+  displayName?: string | null;
+  /**
+   * One or two sentences, shown under the byline.
+   */
+  bio?: string | null;
+  avatar?: (number | null) | Media;
+  /**
+   * Links to this person on other sites (LinkedIn, X, a personal site). Used for the author markup.
+   */
+  sameAs?:
+    | {
+        url: string;
+        id?: string | null;
+      }[]
+    | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -437,6 +599,86 @@ export interface User {
     | null;
   password?: string | null;
   collection: 'users';
+}
+/**
+ * Creating a brief starts an AI draft (when AI drafts are on in Site settings). The draft is saved as an unpublished post and needs a human review before it can go live.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "blog-briefs".
+ */
+export interface BlogBrief {
+  id: number;
+  topic: string;
+  targetKeyword: string;
+  category: number | Category;
+  /**
+   * What makes this guide worth reading: the audience, the decision it helps with.
+   */
+  angle?: string | null;
+  /**
+   * The draft must land within 20% of this.
+   */
+  targetWords?: number | null;
+  /**
+   * Human: your own experience or data goes in the notes below. AI: the notes are scenarios, calculations, tips and pitfalls drawn from research, never invented personal experience.
+   */
+  experienceSource: 'human' | 'ai';
+  /**
+   * Required when you write them yourself. When "AI" is chosen, the job fills this in (you may edit it before queueing again).
+   */
+  firstHandNotes?: string | null;
+  /**
+   * Pages the guide must link to (live deals and category hubs).
+   */
+  mustLinkTo?:
+    | (
+        | {
+            relationTo: 'deals';
+            value: number | Deal;
+          }
+        | {
+            relationTo: 'categories';
+            value: number | Category;
+          }
+      )[]
+    | null;
+  /**
+   * Set to "queued" to run the draft again after a failure.
+   */
+  status: 'queued' | 'researching' | 'writing' | 'ready' | 'failed';
+  post?: (number | null) | Post;
+  error?: string | null;
+  estimatedCostUsd?: number | null;
+  /**
+   * Becomes the draft's author.
+   */
+  createdBy?: (number | null) | User;
+  /**
+   * Search queries, the result pages found (URLs and titles) and our own notes. Raw search snippets are never stored.
+   */
+  research?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * Tokens, searches and the estimated cost of this draft.
+   */
+  usage?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -579,110 +821,6 @@ export interface ArchiveBlock {
   id?: string | null;
   blockName?: string | null;
   blockType: 'archive';
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "stores".
- */
-export interface Store {
-  id: number;
-  name: string;
-  /**
-   * Bare domain, e.g. example.com
-   */
-  domain: string;
-  logo?: (number | null) | Media;
-  /**
-   * Original copy for the store hub. Do not paste the merchant blurb.
-   */
-  description?: string | null;
-  affiliateProgram:
-    'none' | 'ebay' | 'aliexpress' | 'amazon' | 'skimlinks' | 'sovrn' | 'awin' | 'impact' | 'cj' | 'direct';
-  /**
-   * Switching to Active monetises every existing deal from this store.
-   */
-  affiliateStatus: 'none' | 'pending' | 'active';
-  /**
-   * Outbound link pattern. {url} is the raw product URL, {encodedUrl} is URL-encoded (for network deep links).
-   */
-  linkTemplate: string;
-  /**
-   * When enabled, the slug will auto-generate from the title field on save and autosave.
-   */
-  generateSlug?: boolean | null;
-  slug: string;
-  meta?: {
-    title?: string | null;
-    /**
-     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
-     */
-    image?: (number | null) | Media;
-    description?: string | null;
-  };
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "deals".
- */
-export interface Deal {
-  id: number;
-  title: string;
-  store: number | Store;
-  category: number | Category;
-  /**
-   * Plain product page URL (no affiliate or tracking parameters).
-   */
-  productUrl: string;
-  image?: (number | null) | Media;
-  price: number;
-  /**
-   * Regular price before the discount.
-   */
-  wasPrice?: number | null;
-  /**
-   * ISO 4217 code, e.g. USD.
-   */
-  currency: string;
-  /**
-   * When you last confirmed this price. Shown as "Price checked <time>". Set automatically when the price changes.
-   */
-  priceCheckedAt?: string | null;
-  /**
-   * Why this is a deal, in your own words (at least 140 characters). Original copy only; do not paste the merchant description.
-   */
-  editorNote: string;
-  couponCode?: string | null;
-  meta?: {
-    title?: string | null;
-    /**
-     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
-     */
-    image?: (number | null) | Media;
-    description?: string | null;
-  };
-  /**
-   * Lifecycle: expired and sold-out deals keep their page. "Draft" keeps a published deal hidden from the public.
-   */
-  status: 'draft' | 'live' | 'expired' | 'sold-out';
-  /**
-   * Defaults to now.
-   */
-  startsAt?: string | null;
-  /**
-   * Defaults to the next drop time (see Site settings).
-   */
-  expiresAt?: string | null;
-  publishedAt?: string | null;
-  /**
-   * When enabled, the slug will auto-generate from the title field on save and autosave.
-   */
-  generateSlug?: boolean | null;
-  slug: string;
-  updatedAt: string;
-  createdAt: string;
-  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -922,7 +1060,13 @@ export interface PayloadJob {
         executedAt: string;
         completedAt: string;
         taskSlug:
-          'inline' | 'publishDueDrops' | 'revalidateDrop' | 'pingIndexNow' | 'postDropToTelegram' | 'schedulePublish';
+          | 'inline'
+          | 'publishDueDrops'
+          | 'revalidateDrop'
+          | 'pingIndexNow'
+          | 'postDropToTelegram'
+          | 'generateBlogDraft'
+          | 'schedulePublish';
         taskID: string;
         input?:
           | {
@@ -956,7 +1100,15 @@ export interface PayloadJob {
       }[]
     | null;
   taskSlug?:
-    | ('inline' | 'publishDueDrops' | 'revalidateDrop' | 'pingIndexNow' | 'postDropToTelegram' | 'schedulePublish')
+    | (
+        | 'inline'
+        | 'publishDueDrops'
+        | 'revalidateDrop'
+        | 'pingIndexNow'
+        | 'postDropToTelegram'
+        | 'generateBlogDraft'
+        | 'schedulePublish'
+      )
     | null;
   queue?: string | null;
   waitUntil?: string | null;
@@ -1027,6 +1179,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'subscribers';
         value: number | Subscriber;
+      } | null)
+    | ({
+        relationTo: 'blog-briefs';
+        value: number | BlogBrief;
       } | null)
     | ({
         relationTo: 'redirects';
@@ -1209,8 +1365,15 @@ export interface PostsSelect<T extends boolean = true> {
   title?: T;
   heroImage?: T;
   content?: T;
+  sources?:
+    | T
+    | {
+        title?: T;
+        url?: T;
+        id?: T;
+      };
+  relatedDeals?: T;
   relatedPosts?: T;
-  categories?: T;
   meta?:
     | T
     | {
@@ -1219,13 +1382,13 @@ export interface PostsSelect<T extends boolean = true> {
         description?: T;
       };
   publishedAt?: T;
-  authors?: T;
-  populatedAuthors?:
-    | T
-    | {
-        id?: T;
-        name?: T;
-      };
+  category?: T;
+  author?: T;
+  populatedAuthor?: T;
+  aiAssisted?: T;
+  reviewedBy?: T;
+  reviewedAt?: T;
+  brief?: T;
   generateSlug?: T;
   slug?: T;
   updatedAt?: T;
@@ -1320,6 +1483,15 @@ export interface CategoriesSelect<T extends boolean = true> {
  */
 export interface UsersSelect<T extends boolean = true> {
   name?: T;
+  displayName?: T;
+  bio?: T;
+  avatar?: T;
+  sameAs?:
+    | T
+    | {
+        url?: T;
+        id?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
   email?: T;
@@ -1487,6 +1659,29 @@ export interface SubscribersSelect<T extends boolean = true> {
   consentAt?: T;
   consentText?: T;
   confirmedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "blog-briefs_select".
+ */
+export interface BlogBriefsSelect<T extends boolean = true> {
+  topic?: T;
+  targetKeyword?: T;
+  category?: T;
+  angle?: T;
+  targetWords?: T;
+  experienceSource?: T;
+  firstHandNotes?: T;
+  mustLinkTo?: T;
+  status?: T;
+  post?: T;
+  error?: T;
+  estimatedCostUsd?: T;
+  createdBy?: T;
+  research?: T;
+  usage?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1674,6 +1869,27 @@ export interface SiteSetting {
    * Public link shown on the signup box, e.g. https://t.me/dmdailydeals. Leave empty to hide it.
    */
   telegramChannelUrl?: string | null;
+  /**
+   * Controls the blog draft generator. Keys are set in the environment, never here.
+   */
+  ai?: {
+    /**
+     * Off by default. A new brief fails with a clear message while this is off. Also needs the API keys in the environment.
+     */
+    enabled?: boolean | null;
+    /**
+     * Leave empty to use AI_PROVIDER from the environment.
+     */
+    provider?: ('deepseek' | 'openai') | null;
+    /**
+     * Leave empty for the provider's default model (deepseek-flash, gpt-6-luna). The AI_MODEL environment variable overrides this.
+     */
+    model?: string | null;
+    /**
+     * Most drafts that may be started per calendar month (UTC). Protects the budget.
+     */
+    monthlyDraftCap?: number | null;
+  };
   newsletterEnabled?: boolean | null;
   updatedAt?: string | null;
   createdAt?: string | null;
@@ -1802,6 +2018,14 @@ export interface SiteSettingsSelect<T extends boolean = true> {
   nextDropOverride?: T;
   telegramEnabled?: T;
   telegramChannelUrl?: T;
+  ai?:
+    | T
+    | {
+        enabled?: T;
+        provider?: T;
+        model?: T;
+        monthlyDraftCap?: T;
+      };
   newsletterEnabled?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -1944,6 +2168,20 @@ export interface TaskPostDropToTelegram {
     photoMessageId?: number | null;
     listMessageId?: number | null;
     sent?: number | null;
+  };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskGenerateBlogDraft".
+ */
+export interface TaskGenerateBlogDraft {
+  input: {
+    briefId: number;
+  };
+  output: {
+    status?: string | null;
+    postId?: number | null;
+    note?: string | null;
   };
 }
 /**

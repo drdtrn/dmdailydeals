@@ -1,7 +1,9 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import React from 'react'
 
+import { GuideList } from '@/components/blog/GuideList'
 import { CategoryNav } from '@/components/deals/CategoryNav'
 import { DisclosureNote } from '@/components/deals/DisclosureNote'
 import { DealGrid } from '@/components/pages/DealGrid'
@@ -9,6 +11,7 @@ import { DropRow } from '@/components/pages/DropRow'
 import { JsonLd } from '@/components/seo/JsonLd'
 import { dealHref } from '@/components/deals/dealView'
 import { PageHeading, PageSection } from '@/components/pages/PageHeading'
+import { listLatestPosts } from '@/lib/data/content'
 import { getLiveDealsByCategory, getLowestFlags } from '@/lib/data/deals'
 import { getDropsForCategory } from '@/lib/data/drops'
 import { getCategoryBySlug } from '@/lib/data/site'
@@ -39,9 +42,10 @@ export default async function CategoryPage({ params }: Props) {
   const category = await getCategoryBySlug(slug)
   if (!category) notFound()
 
-  const [deals, drops] = await Promise.all([
+  const [deals, drops, guides] = await Promise.all([
     getLiveDealsByCategory(category.id, category.slug),
     getDropsForCategory(category.id, category.slug),
+    listLatestPosts(4, { id: category.id, slug: category.slug }),
   ])
   const lowest = await getLowestFlags(deals)
   const origin = siteOrigin()
@@ -92,6 +96,26 @@ export default async function CategoryPage({ params }: Props) {
           </p>
         )}
       </PageSection>
+
+      {guides.length > 0 ? (
+        <PageSection
+          title="Latest guides"
+          aside={
+            <Link
+              href="/blog"
+              className="inline-flex min-h-11 items-center text-sm font-semibold underline underline-offset-4 hover:no-underline"
+            >
+              All guides
+            </Link>
+          }
+        >
+          <GuideList
+            posts={guides}
+            label={`Latest ${category.title.toLowerCase()} guides`}
+            showCategory={false}
+          />
+        </PageSection>
+      ) : null}
 
       {drops.length > 0 ? (
         <PageSection title={`Recent drops with ${category.title.toLowerCase()} deals`}>

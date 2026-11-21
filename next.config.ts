@@ -57,6 +57,9 @@ const nextConfig: NextConfig = {
 
     return webpackConfig
   },
+  // The AI draft task reads src/ai/style-guide.md from disk at run time. Next's file tracing cannot
+  // see that read, so include it in the standalone output explicitly.
+  outputFileTracingIncludes: { '/*': ['./src/ai/style-guide.md'] },
   reactStrictMode: true,
   htmlLimitedBots,
   redirects,

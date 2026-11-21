@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import React from 'react'
 
+import { GuideList } from '@/components/blog/GuideList'
 import { AlwaysOnOffer } from '@/components/deals/AlwaysOnOffer'
 import { CategoryNav } from '@/components/deals/CategoryNav'
 import { Countdown } from '@/components/deals/Countdown'
@@ -12,6 +13,7 @@ import { NewsletterCta } from '@/components/deals/NewsletterCta'
 import { DealGrid } from '@/components/pages/DealGrid'
 import { PageSection } from '@/components/pages/PageHeading'
 import { JsonLd } from '@/components/seo/JsonLd'
+import { listLatestPosts } from '@/lib/data/content'
 import { getCurrentDrop } from '@/lib/data/drops'
 import { getNextDropTarget, getOffer, getSiteSettings } from '@/lib/data/site'
 import { formatDropAt } from '@/lib/format'
@@ -45,11 +47,12 @@ export default async function HomePage({
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
-  const [current, nextDropAt, offer, settings] = await Promise.all([
+  const [current, nextDropAt, offer, settings, guides] = await Promise.all([
     getCurrentDrop(),
     getNextDropTarget(),
     getOffer(),
     getSiteSettings(),
+    listLatestPosts(3),
   ])
 
   const subscribed = parseSubscribedFlag((await searchParams)[SUBSCRIBED_PARAM])
@@ -58,6 +61,24 @@ export default async function HomePage({
   const jsonLd = <JsonLd data={[buildWebSite(origin), buildOrganization(origin)]} />
   const showNewsletter = settings.newsletterEnabled !== false
   const telegramUrl = safeHttpUrl(settings.telegramChannelUrl) ?? undefined
+
+  // Shown only when there are published guides.
+  const fromTheBlog =
+    guides.length > 0 ? (
+      <PageSection
+        title="From the blog"
+        aside={
+          <Link
+            href="/blog"
+            className="inline-flex min-h-11 items-center text-sm font-semibold underline underline-offset-4 hover:no-underline"
+          >
+            All guides
+          </Link>
+        }
+      >
+        <GuideList posts={guides} label="Latest guides" />
+      </PageSection>
+    ) : null
 
   const offerAndNewsletter = (
     <div className="mt-12 flex flex-wrap gap-6 md:mt-20">
@@ -94,6 +115,7 @@ export default async function HomePage({
             leading={{ label: 'All', href: '/', active: true }}
             label="Browse by category"
           />
+          {fromTheBlog}
           {offerAndNewsletter}
         </div>
       </>
@@ -147,6 +169,7 @@ export default async function HomePage({
           </PageSection>
         ) : null}
 
+        {fromTheBlog}
         {offerAndNewsletter}
       </div>
     </>

@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "build": "cross-env NODE_OPTIONS=--no-deprecation next build",
+    "cron:ai": "QUEUES=ai EXTRA_QUERY='limit=1&disableScheduling=true' TIMEOUT=900 sh scripts/cron-loop.sh",
     "cron:dev": "sh scripts/cron-loop.sh",
     "dev": "cross-env NODE_OPTIONS=--no-deprecation next dev",
     "dev:prod": "cross-env NODE_OPTIONS=--no-deprecation rm -rf .next && pnpm build && pnpm start",
@@ -48,13 +49,15 @@
     "graphql": "^16.8.2",
     "lucide-react": "0.563.0",
     "next": "16.4.6",
+    "openai": "7.55.0",
     "payload": "3.94.1",
     "prism-react-renderer": "^2.3.1",
     "react": "19.2.9",
     "react-dom": "19.2.9",
     "react-hook-form": "7.71.1",
     "sharp": "0.35.4",
-    "tailwind-merge": "^3.4.0"
+    "tailwind-merge": "^3.4.0",
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.14.0",

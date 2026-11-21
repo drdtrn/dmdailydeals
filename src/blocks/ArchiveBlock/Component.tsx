@@ -30,10 +30,12 @@ export const ArchiveBlock: React.FC<
       collection: 'posts',
       depth: 1,
       limit,
+      draft: false,
+      overrideAccess: false,
       ...(flattenedCategories && flattenedCategories.length > 0
         ? {
             where: {
-              categories: {
+              category: {
                 in: flattenedCategories,
               },
             },

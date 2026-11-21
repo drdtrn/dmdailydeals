@@ -1,5 +1,6 @@
 import type {
   Article,
+  BlogPosting,
   BreadcrumbList,
   CollectionPage,
   ItemList,
@@ -196,6 +197,42 @@ export function buildArticle(origin: string, input: ArticleInput): Doc<Article> 
     author: organizationNode(origin),
     publisher: organizationNode(origin),
   }
+}
+
+export type BlogPostingInput = ArticleInput & {
+  /** The category name, as `articleSection`. */
+  section?: string | null
+  /** A real, named author. Without one the Organization is the author. */
+  author?: { name: string; sameAs?: readonly string[] } | null
+}
+
+/**
+ * A blog post. The author is a `Person` (name and profile links) when the post has a byline, else
+ * the Organization; the publisher is always the Organization. There are no properties about how
+ * the content was produced.
+ */
+export function buildBlogPosting(origin: string, input: BlogPostingInput): Doc<BlogPosting> {
+  const {
+    author: _author,
+    publisher: _publisher,
+    '@context': _context,
+    ...article
+  } = buildArticle(origin, input)
+  const sameAs = (input.author?.sameAs ?? []).filter(Boolean)
+  return {
+    '@context': 'https://schema.org',
+    ...article,
+    '@type': 'BlogPosting',
+    ...(input.section ? { articleSection: input.section } : {}),
+    author: input.author
+      ? {
+          '@type': 'Person',
+          name: input.author.name,
+          ...(sameAs.length > 0 ? { sameAs: [...sameAs] } : {}),
+        }
+      : organizationNode(origin),
+    publisher: organizationNode(origin),
+  } as Doc<BlogPosting>
 }
 
 /** An ordered list of page URLs. No rich result, but it tells crawlers what the page lists. */

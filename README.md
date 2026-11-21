@@ -50,7 +50,8 @@ If your shell has a global Node earlier on `PATH` than mise's shims, run `eval "
 | `pnpm format` / `pnpm format:check` | Prettier                                                        |
 | `pnpm test:int`                     | Unit + integration tests (needs Postgres, uses a test database) |
 | `pnpm seed`                         | Example content for dev/test (never for production)             |
-| `pnpm cron:dev`                     | Local job runner loop (publishes drops; see below)              |
+| `pnpm cron:dev`                     | Local job runner loop A (drops and follow-ups; see below)       |
+| `pnpm cron:ai`                      | Local job runner loop B (AI blog drafts; see below)             |
 | `pnpm migrate`                      | Apply migrations (migration-managed databases)                  |
 | `pnpm migrate:create <name>`        | Generate a migration after a schema change                      |
 | `pnpm migrate:status`               | Show which migrations have run                                  |
@@ -77,11 +78,44 @@ pnpm cron:dev                # every 60 s: ?queue=drops, then ?queue=default
 | `INTERVAL`    | `60`                    | Seconds between rounds         |
 | `QUEUES`      | `drops default`         | Queues to run, in order        |
 | `TIMEOUT`     | `55`                    | Per-request timeout in seconds |
+| `EXTRA_QUERY` | empty                   | Appended to every request URL  |
 | `ONCE`        | unset                   | `1` runs one round and exits   |
+
+### Two loops: drops and AI drafts
+
+Run the loop **twice**, as two separate processes (Phase 9's compose file runs two `cron` containers), so a slow AI job can never delay a drop:
+
+| Loop | Command                                                                                                       | Queues          | Notes                                                       |
+| ---- | ------------------------------------------------------------------------------------------------------------- | --------------- | ----------------------------------------------------------- |
+| A    | `sh scripts/cron-loop.sh` (`pnpm cron:dev`)                                                                   | `drops default` | Every 60 s, 55 s timeout. Also schedules `publishDueDrops`. |
+| B    | `QUEUES=ai EXTRA_QUERY='limit=1&disableScheduling=true' TIMEOUT=900 sh scripts/cron-loop.sh` (`pnpm cron:ai`) | `ai`            | One AI job per request, no scheduling, 15 minute timeout.   |
+
+Loop A never touches the `ai` queue, and loop B never queues scheduled tasks.
 
 A scheduled job is queued with `waitUntil` set to the next minute, so a drop goes live within about two minutes of its `publishAt`. After a drop goes live, `revalidateDrop` invalidates the cache tags (`drop:current`, `drops`, `drop:<date>`, `category:<slug>`, `store:<slug>`, `deal:<id>`, `sitemap`) and warms `/` and `/drops/<date>` through self calls (`INTERNAL_SERVER_URL`, default `http://127.0.0.1:$PORT`).
 
 `/go/<deal id>` is the outbound redirect: it applies the store's link template (only when the store's affiliate status is `active`), answers `302` with `Cache-Control: no-store`, and logs the click (no IP address, no user agent) after the response.
+
+## Blog and AI drafts
+
+Guides live at `/blog`. Each one has one category (its "Latest guides" hub), a real author (`users.displayName`, `bio`, `avatar`, `sameAs`), sources, related deals and a Lexical body. **The site says nothing about how a guide was produced**; the `aiAssisted` flag and the review fields are internal.
+
+### Creating a draft
+
+1. Admin > **Blog briefs** > Create new: a topic, target keyword, category, an angle and a target length. Choose where the experience notes come from:
+   - **Human**: write `firstHandNotes` yourself (required).
+   - **AI**: the job writes original insight material (worked scenarios, calculations, tips, pitfalls) from the research. It is never allowed to claim personal use ("I tested...").
+2. Saving the brief queues one `generateBlogDraft` job on the `ai` queue (loop B above runs it): research with a capped web search (8 searches), insight notes, then a draft that is validated (links only from the site inventory, sources only from the research, length within 20% of the target, unique slug) and saved as an **unpublished** `posts` draft with `aiAssisted` on. The brief shows its status, the estimated cost and a link to the draft.
+3. To publish an AI-assisted post a person must read it and set **Reviewed by**. The save is refused otherwise, for the admin, the API and scheduled publishing alike (decision D8).
+4. To run a failed brief again, set its status back to **queued**.
+
+A new brief fails at once, with a reason on the brief and nothing queued, when AI drafts are off (Site settings > AI blog drafts), a key is missing or the monthly draft cap is reached.
+
+### Configuration
+
+Choices live in **Site settings > AI blog drafts** (on/off, provider, model, monthly draft cap). Secrets live in the environment (`.env.example`): `AI_PROVIDER`, `DEEPSEEK_API_KEY` / `OPENAI_API_KEY`, optional `AI_BASE_URL` / `AI_MODEL`, and `TAVILY_API_KEY`. `src/ai/provider.ts` is the only file that knows the provider: its capability table holds the base URL, default model (`deepseek-flash` / `gpt-6-luna`), JSON mode, how to turn thinking off, the token-limit parameter and the prices. Re-check model ids and prices before turning the feature on. **Set a monthly spend limit in each provider's console** (and watch the Tavily credits).
+
+The writing rules are in `src/ai/style-guide.md` (versioned in git, included in the standalone build).
 
 ## Audience and analytics
 

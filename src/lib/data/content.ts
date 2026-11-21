@@ -109,7 +109,25 @@ export async function getEventBySlug(
 
 export const POSTS_PER_PAGE = 12
 
-export type PostCard = Pick<Post, 'id' | 'slug' | 'title' | 'categories' | 'meta'>
+/** What a post card and the home/hub "guides" lists need. */
+export type PostCard = Pick<
+  Post,
+  'id' | 'slug' | 'title' | 'category' | 'meta' | 'heroImage' | 'publishedAt' | 'populatedAuthor'
+>
+
+/** Tags for every read that lists posts: the post list tag plus the names it prints. */
+const POST_LIST_TAGS = ['posts', 'categories']
+
+const POST_CARD_SELECT = {
+  title: true,
+  slug: true,
+  category: true,
+  meta: true,
+  heroImage: true,
+  publishedAt: true,
+  author: true,
+  populatedAuthor: true,
+} as const
 
 export async function listPosts(page: number): Promise<{
   docs: PostCard[]
@@ -117,15 +135,16 @@ export async function listPosts(page: number): Promise<{
   totalPages: number
   page: number
 }> {
-  return readCached(['posts-list', page], ['posts'], async (payload) => {
+  return readCached(['posts-list', page], POST_LIST_TAGS, async (payload) => {
     const res = await payload.find({
       collection: 'posts',
       depth: 1,
       limit: POSTS_PER_PAGE,
       page,
       sort: '-publishedAt',
+      draft: false,
       overrideAccess: false,
-      select: { title: true, slug: true, categories: true, meta: true },
+      select: POST_CARD_SELECT,
     })
     return {
       docs: res.docs as PostCard[],
@@ -136,18 +155,58 @@ export async function listPosts(page: number): Promise<{
   })
 }
 
+/** The newest published guides, optionally limited to one category (home page, category hubs). */
+export async function listLatestPosts(
+  limit: number,
+  category?: { id: number; slug: string },
+): Promise<PostCard[]> {
+  return readCached(
+    ['posts-latest', limit, category?.slug ?? 'all'],
+    [...POST_LIST_TAGS, ...(category ? [`category:${category.slug}`] : [])],
+    async (payload) => {
+      const res = await payload.find({
+        collection: 'posts',
+        ...(category ? { where: { category: { equals: category.id } } } : {}),
+        depth: 1,
+        limit,
+        pagination: false,
+        sort: '-publishedAt',
+        draft: false,
+        overrideAccess: false,
+        select: POST_CARD_SELECT,
+      })
+      return res.docs as PostCard[]
+    },
+  )
+}
+
 export async function getPostBySlug(slug: string): Promise<Post | null> {
   if (!isSlug(slug)) return null
-  return readCached(['post', slug], [`post:${slug}`, 'posts'], async (payload) => {
+  return readCached(['post', slug], [`post:${slug}`, ...POST_LIST_TAGS], async (payload) => {
     const res = await payload.find({
       collection: 'posts',
       where: { slug: { equals: slug } },
       limit: 1,
-      depth: 2,
+      depth: 1,
       pagination: false,
       draft: false,
       overrideAccess: false,
     })
     return res.docs[0] ?? null
   })
+}
+
+/** The live deals a post lists under "Related deals", in the author's order. */
+export async function getPostRelatedDeals(
+  postSlug: string,
+  dealIds: (number | string)[],
+): Promise<Deal[]> {
+  return readCached(
+    ['post-deals', postSlug, dealIds.join(',')],
+    [`post:${postSlug}`, ...DEAL_TAGS],
+    async (payload) => {
+      const deals = await dealsByIds(payload, dealIds)
+      return deals.filter((d) => d.status === 'live')
+    },
+  )
 }

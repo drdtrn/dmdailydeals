@@ -948,6 +948,40 @@ Searches add ≈ $0.064 per draft (Tavily pay-as-you-go) once past the free tier
 - No unvalidated model JSON.
 - No FAQPage markup.
 
+**Outcome (2026-11-21): built and tested against mocks only.** No real DeepSeek, OpenAI or Tavily call has been made. On a fresh database, CI's full sequence passes (419 integration tests, 103 e2e tests, 1 skipped), and the build needs no database. Deviations and notes:
+- **Libraries:** `openai` is pinned to 7.55.0 and `zod` to 4.6.7. Markdown is converted to Lexical with `convertMarkdownToLexical` plus `editorConfigFactory.fromEditor`, using the shared posts editor, which gained list and quote features.
+- **Posts have one `category` and one `author`.** The template's `categories`, `authors` and `populatedAuthors` are gone. The public byline comes from a virtual `populatedAuthor` that holds only displayName, bio, avatar and sameAs.
+  - A user without a `displayName` is never shown as an author.
+  - BlogPosting's `Person` has `name` and `sameAs`. There's no URL, because authors have no website field.
+- **Hidden fields:** `aiAssisted`, `reviewedBy`, `reviewedAt` and the brief join can only be read by logged-in users.
+  - Checked: the anonymous `/api/posts` response has none of them, and filtering on `aiAssisted` returns 400.
+  - `/api/blog-briefs` and `/api/users` return 403, and the `site-settings.ai` group is staff-only.
+  - Feeds and llms.txt contain no AI statements.
+- **D8 gate:** a `beforeChange` hook checks the merged document and blocks publishing an `aiAssisted` post without `reviewedBy`. That covers Local API and REST saves and the real `schedulePublish` job (tested).
+- **Briefs:**
+  - Gating (AI enabled, keys present, monthly cap counting this month's non-failed briefs in UTC) runs in `beforeChange`. A blocked brief is saved as `failed` with an error.
+  - Briefs are queued once per transition into `queued`, after checking for a pending job.
+  - Added fields: `createdBy` (becomes the post's author) and `estimatedCostUsd`.
+- **Retries:** `retries: 2` covers provider, network and search failures. A draft that is still invalid after the one in-chat retry fails the brief without throwing, so the same mistake isn't paid for three times. Research and notes are reused on retry, and usage accumulates across attempts.
+- **Draft validation:**
+  - zod schema.
+  - Root-relative internal links must come from the inventory, and every `mustLinkTo` must be linked.
+  - Sources must be among the researched URLs.
+  - Word count within ±20%.
+  - No H1, no FAQ heading, no "written by AI" statements.
+  - In AI mode, a first-person guard.
+- **Provider precedence:** provider from site-settings, else `AI_PROVIDER`, else deepseek. Model from `AI_MODEL`, else site-settings, else the default. **OpenAI strict `json_schema` acceptance of our schema is unverified until the first real call.**
+- **`src/ai/style-guide.md` is read at run time.** `outputFileTracingIncludes` puts it in `.next/standalone/src/ai/`.
+- **Cron loop B:** `QUEUES=ai EXTRA_QUERY='limit=1&disableScheduling=true' TIMEOUT=900 sh scripts/cron-loop.sh` (`pnpm cron:ai`).
+- **Dev gotcha:** after `pnpm seed`, a running dev server can serve stale cached lists until restart, because the seed disables revalidation.
+- **Before the first real draft (user):**
+  - API keys.
+  - Spend limits in each provider's console (D9) and Tavily credits.
+  - Turn on AI in Site settings and set the cap.
+  - Give real author profiles to the users who write.
+  - Run loop B.
+  - **One approved real-money test per `experienceSource`.**
+
 ## Phase 9 — Production deploy on the VPS
 
 > **How this serves the primary goal:** the site has to be live, fast, secure and backed up at dmdailydeals.com, with the drop running unattended every day.
