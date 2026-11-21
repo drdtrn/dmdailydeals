@@ -24,3 +24,7 @@ node_modules/
 
 # TypeScript incremental build cache
 *.tsbuildinfo
+
+# Production secrets (see .env.production.example)
+.env.production
+/caddy/certs/

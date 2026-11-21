@@ -1,0 +1,143 @@
+name: Deploy
+
+# Manual only: there is no main branch yet and the repository secrets are not set up. Run it from
+# Actions > Deploy > Run workflow. See docs/deploy.md ("GitHub").
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Branch, tag or commit to build and deploy
+        default: develop
+        required: true
+      deploy:
+        description: Deploy to the VPS after pushing the image (untick to only build and push)
+        type: boolean
+        default: true
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+env:
+  IMAGE: ghcr.io/${{ github.repository_owner }}/dmdailydeals
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      tag: ${{ steps.meta.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+
+      - id: meta
+        run: echo "tag=sha-$(git rev-parse --short=7 HEAD)" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v4
+
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # The image is built with the production URL and the Umami values (all public, none secret).
+      # They are repository variables (Settings > Secrets and variables > Actions > Variables).
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:${{ steps.meta.outputs.tag }}
+            ${{ env.IMAGE }}:latest
+          build-args: |
+            NEXT_PUBLIC_SERVER_URL=${{ vars.NEXT_PUBLIC_SERVER_URL || 'https://dmdailydeals.com' }}
+            NEXT_PUBLIC_UMAMI_SRC=${{ vars.NEXT_PUBLIC_UMAMI_SRC }}
+            NEXT_PUBLIC_UMAMI_WEBSITE_ID=${{ vars.NEXT_PUBLIC_UMAMI_WEBSITE_ID }}
+            NEXT_PUBLIC_UMAMI_DOMAINS=${{ vars.NEXT_PUBLIC_UMAMI_DOMAINS }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    needs: build
+    if: ${{ inputs.deploy }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      VPS_PATH: ${{ secrets.VPS_PATH || '/opt/dmdailydeals' }}
+      TAG: ${{ needs.build.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Set up SSH
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          # Optional but recommended: the output of `ssh-keyscan -t ed25519 <host>` taken from a
+          # machine you trust. Without it the host key is scanned during this run (trust on first use).
+          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        run: |
+          set -eu
+          [ -n "$VPS_HOST" ] && [ -n "$VPS_USER" ] && [ -n "$VPS_SSH_KEY" ] || { echo "Set VPS_HOST, VPS_USER and VPS_SSH_KEY secrets" >&2; exit 1; }
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          if [ -n "$VPS_KNOWN_HOSTS" ]; then
+            printf '%s\n' "$VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          else
+            echo "::warning::VPS_KNOWN_HOSTS is not set: trusting the host key seen now"
+            ssh-keyscan -t ed25519 "$VPS_HOST" > ~/.ssh/known_hosts
+          fi
+          printf 'Host vps\n  HostName %s\n  User %s\n  IdentityFile ~/.ssh/id_deploy\n  StrictHostKeyChecking yes\n' \
+            "$VPS_HOST" "$VPS_USER" > ~/.ssh/config
+
+      # The VPS needs no git checkout: ship the files compose mounts (compose, Caddyfile, scripts).
+      # .env.production and caddy/certs/ live on the VPS and are never touched.
+      - name: Upload deploy files
+        run: |
+          # shellcheck disable=SC2029  # VPS_PATH is meant to expand here, on the runner
+          tar czf - compose.prod.yml caddy/Caddyfile caddy/cloudflare-ips.caddy \
+            scripts/cron-loop.sh scripts/backup.sh scripts/backup-loop.sh scripts/restore.sh \
+            postgres/initdb | ssh vps "mkdir -p '$VPS_PATH' && tar xzf - -C '$VPS_PATH'"
+
+      # Migrations run when the new web container boots (prodMigrations). A single web replica.
+      - name: Pull and restart
+        run: |
+          ssh vps env VPS_PATH="$VPS_PATH" TAG="$TAG" bash -s <<'REMOTE'
+          set -eu
+          cd "$VPS_PATH"
+          test -f .env.production || { echo '.env.production is missing on the VPS' >&2; exit 1; }
+          # Record the deployed tag: it is what `up -d` uses from now on, and what you edit to roll back.
+          if grep -q '^WEB_IMAGE_TAG=' .env.production; then
+            sed -i "s|^WEB_IMAGE_TAG=.*|WEB_IMAGE_TAG=$TAG|" .env.production
+          else
+            echo "WEB_IMAGE_TAG=$TAG" >> .env.production
+          fi
+          dc='docker compose --env-file .env.production -f compose.prod.yml'
+          $dc pull web
+          $dc up -d --remove-orphans
+          $dc ps
+          REMOTE
+
+      - name: Wait for the site
+        env:
+          URL: ${{ vars.NEXT_PUBLIC_SERVER_URL || 'https://dmdailydeals.com' }}
+        run: |
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "$URL/api/health" || true)
+            echo "attempt $i: $code"
+            [ "$code" = "200" ] && exit 0
+            sleep 10
+          done
+          echo "::error::$URL/api/health did not return 200 within 5 minutes" >&2
+          exit 1

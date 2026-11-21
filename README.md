@@ -10,7 +10,7 @@ The full product and technical plan, including decisions, phases and verificatio
 - PostgreSQL 17
 - Tailwind CSS 4
 - Vitest (integration tests) and Playwright (end-to-end tests)
-- Self-hosted with Docker on a VPS (production setup comes in Phase 9)
+- Self-hosted with Docker Compose on a VPS behind Cloudflare (see [`docs/deploy.md`](docs/deploy.md))
 
 ## Prerequisites
 
@@ -147,6 +147,10 @@ The script loads only when `NEXT_PUBLIC_UMAMI_SRC` and `NEXT_PUBLIC_UMAMI_WEBSIT
 ### Click report
 
 **Admin > Click report** (`/admin/reports/clicks`) shows outbound clicks per store and per deal, plus the top source pages, for the last 7 and 30 days. Ranges are rolling windows in UTC with the exact start and end printed. Bots are excluded from every figure and counted separately.
+
+## Production deploy
+
+The production stack (`compose.prod.yml`: web, two cron loops, Postgres, Umami, Caddy, nightly backups), the Cloudflare settings, backups and the restore drill, and the manual GitHub deploy workflow are described step by step in [`docs/deploy.md`](docs/deploy.md). `.env.production.example` lists every production variable.
 
 ## Database schema workflow
 

@@ -1,0 +1,55 @@
+# Defines the (cloudflare_ranges) snippet. Must come before the global options that use it.
+import /etc/caddy/cloudflare-ips.caddy
+
+# Caddy terminates TLS for the origin. Cloudflare (proxied DNS, SSL "Full (strict)") is the only
+# thing allowed to talk to it. See docs/deploy.md.
+{
+	# Cloudflare is the trusted proxy: {client_ip} and the forwarded headers come from it.
+	servers {
+		trusted_proxies static {
+			import cloudflare_ranges
+		}
+		client_ip_headers CF-Connecting-IP
+	}
+	# TLS comes from the Cloudflare Origin Certificate files below, not from ACME.
+	auto_https disable_redirects
+}
+
+(origin_tls) {
+	tls /certs/origin.pem /certs/origin.key
+}
+
+(common) {
+	encode zstd gzip
+	# Never add "Referrer-Policy: no-referrer": it breaks affiliate attribution (Amazon rule).
+	# The app sets its own headers; Caddy only adds these.
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options nosniff
+		-Server
+	}
+}
+
+dmdailydeals.com {
+	import origin_tls
+	import cloudflare_only
+	import common
+	reverse_proxy web:3000 {
+		# Active check so a restarting web returns 502 quickly instead of hanging requests.
+		health_uri /api/health
+		health_interval 15s
+	}
+}
+
+www.dmdailydeals.com {
+	import origin_tls
+	import cloudflare_only
+	redir https://dmdailydeals.com{uri} permanent
+}
+
+stats.dmdailydeals.com {
+	import origin_tls
+	import cloudflare_only
+	import common
+	reverse_proxy umami:3000
+}

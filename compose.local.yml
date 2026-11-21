@@ -1,0 +1,27 @@
+# Local production rehearsal (never used on the VPS). Runs the real production stack on this machine
+# next to the dev containers, on non-privileged localhost ports:
+#
+#   web (direct)  http://127.0.0.1:3100        postgres  127.0.0.1:5434 (for the seed)
+#   caddy         https://127.0.0.1:8443       (self-signed cert in caddy/certs, gitignored)
+#
+#   docker compose -p dmdailydeals-prodtest --env-file .env.production \
+#     -f compose.prod.yml -f compose.local.yml up -d
+#
+# See "Local rehearsal" in docs/deploy.md.
+name: dmdailydeals-prodtest
+
+services:
+  web:
+    ports:
+      - '127.0.0.1:3100:3000'
+  postgres:
+    ports:
+      - '127.0.0.1:5434:5432'
+    networks: [internal, public]
+  caddy:
+    ports: !override
+      - '127.0.0.1:8080:80'
+      - '127.0.0.1:8443:443'
+    environment:
+      # Docker bridge addresses, so requests from this machine pass the Cloudflare allowlist.
+      ALLOW_EXTRA_CIDRS: 127.0.0.1/32 172.16.0.0/12 192.168.0.0/16 10.0.0.0/8

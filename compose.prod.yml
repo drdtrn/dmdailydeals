@@ -1,0 +1,176 @@
+# Production stack for the VPS. Run it with the env file passed explicitly (Compose reads it for the
+# ${VAR} values below; `env_file:` below hands the same file to the web container):
+#
+#   docker compose --env-file .env.production -f compose.prod.yml up -d
+#
+# See docs/deploy.md. Local rehearsal: add `-f compose.local.yml` (project dmdailydeals-prodtest).
+name: dmdailydeals
+
+x-cron: &cron # Pinned. curl 8.x with a POSIX sh (busybox) is all scripts/cron-loop.sh needs.
+  image: curlimages/curl:8.14.1
+  restart: unless-stopped
+  entrypoint: ['sh', '/cron-loop.sh']
+  volumes:
+    - ./scripts/cron-loop.sh:/cron-loop.sh:ro
+  depends_on:
+    web:
+      condition: service_healthy
+  networks: [internal]
+
+services:
+  # One-shot: make sure the media volume is owned by uid 1001 (the web user) whichever container
+  # touched the volume first, and after a restore. web and backup wait for it.
+  media-init:
+    image: postgres:17-alpine
+    user: root
+    restart: 'no'
+    entrypoint: ['sh', '-c', 'chown -R 1001:1001 /app/media']
+    volumes:
+      - media:/app/media
+    networks: [internal]
+
+  # Exactly ONE replica: the ISR / tag cache and the signup rate limiter live in this process's
+  # memory. Never use `deploy.replicas` or `--scale web=2`.
+  web:
+    image: ghcr.io/drdtrn/dmdailydeals:${WEB_IMAGE_TAG:-latest}
+    restart: unless-stopped
+    env_file: .env.production
+    environment:
+      NODE_ENV: production
+      PAYLOAD_DB_PUSH: 'false' # production schema is managed by the committed migrations
+      PAYLOAD_MEDIA_DIR: /app/media
+      DATABASE_URL: postgresql://${POSTGRES_USER:-dmdd}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-dmdailydeals}
+    volumes:
+      - media:/app/media
+    depends_on:
+      postgres:
+        condition: service_healthy
+      media-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -q -O /dev/null http://127.0.0.1:3000/api/health || exit 1']
+      interval: 30s
+      timeout: 5s
+      start_period: 90s
+      retries: 3
+    networks: [internal, egress]
+
+  # Loop A: drops and follow-up jobs, every 60 s.
+  cron:
+    <<: *cron
+    environment:
+      BASE_URL: http://web:3000
+      CRON_SECRET: ${CRON_SECRET:?set CRON_SECRET}
+      QUEUES: drops default
+      INTERVAL: '60'
+      TIMEOUT: '55'
+
+  # Loop B: AI drafts, one job at a time, long timeout, so a slow draft never delays a drop.
+  cron-ai:
+    <<: *cron
+    environment:
+      BASE_URL: http://web:3000
+      CRON_SECRET: ${CRON_SECRET:?set CRON_SECRET}
+      QUEUES: ai
+      EXTRA_QUERY: limit=1&disableScheduling=true
+      TIMEOUT: '900'
+      INTERVAL: '60'
+
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    # No `ports:`: Postgres is reachable only on the internal network.
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-dmdd}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-dmdailydeals}
+      # Password auth everywhere (local socket and TCP), never trust.
+      POSTGRES_HOST_AUTH_METHOD: scram-sha-256
+      POSTGRES_INITDB_ARGS: --auth=scram-sha-256
+      UMAMI_DB_PASSWORD: ${UMAMI_DB_PASSWORD:?set UMAMI_DB_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./postgres/initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks: [internal]
+
+  umami:
+    # Pinned: a real tag of ghcr.io/umami-software/umami (checked against the registry 2026-11-21).
+    image: ghcr.io/umami-software/umami:postgresql-3.0.0
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://umami:${UMAMI_DB_PASSWORD:?set UMAMI_DB_PASSWORD}@postgres:5432/umami
+      APP_SECRET: ${UMAMI_APP_SECRET:?set UMAMI_APP_SECRET}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    # egress: on every start Umami runs `prisma migrate deploy`, which downloads Prisma's schema
+    # engine from binaries.prisma.sh. Without outbound access it crash-loops (found in the rehearsal).
+    networks: [internal, egress]
+
+  caddy:
+    image: caddy:2.11.9-alpine
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+    environment:
+      # Empty in production. Only the local rehearsal widens the allowlist.
+      ALLOW_EXTRA_CIDRS: ${ALLOW_EXTRA_CIDRS:-127.0.0.1/32}
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./caddy/cloudflare-ips.caddy:/etc/caddy/cloudflare-ips.caddy:ro
+      - ./caddy/certs:/certs:ro # origin.pem and origin.key (Cloudflare Origin Certificate)
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      web:
+        condition: service_healthy
+    networks: [internal, public]
+
+  # Nightly pg_dump of both databases plus a media tarball (03:00 UTC), with retention and optional
+  # rclone upload. A sleep loop in the stack beats a host crontab: it deploys with the stack and
+  # needs no host setup.
+  backup:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    entrypoint: ['sh', '/scripts/backup-loop.sh']
+    env_file: .env.production
+    environment:
+      PGHOST: postgres
+      PGUSER: ${POSTGRES_USER:-dmdd}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      APP_DB: ${POSTGRES_DB:-dmdailydeals}
+      BACKUP_DIR: /backups
+      MEDIA_DIR: /mnt/media
+    volumes:
+      - ./scripts:/scripts:ro
+      - backups:/backups
+      - media:/mnt/media:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      media-init:
+        condition: service_completed_successfully
+    networks: [internal, egress]
+
+networks:
+  # internal: no outside access (databases, cron, caddy <-> web).
+  internal:
+    internal: true
+  # egress: outbound HTTPS for web (api.deepseek.com, api.openai.com, api.tavily.com,
+  # api.telegram.org, api.indexnow.org), umami (binaries.prisma.sh at start) and backup (rclone).
+  egress: {}
+  # public: the only network with published ports (caddy).
+  public: {}
+
+volumes:
+  pgdata:
+  media: # owned by uid 1001 (the image creates /app/media with that owner)
+  caddy_data:
+  caddy_config:
+  backups:
