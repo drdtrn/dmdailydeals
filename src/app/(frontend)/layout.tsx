@@ -63,7 +63,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
 export const metadata: Metadata = {
   metadataBase: new URL(getServerSideURL()),
-  title: 'DMDailyDeals',
+  title: { default: 'DMDailyDeals', template: '%s · DMDailyDeals' },
   description:
     'A fresh set of curated deals across home, tech and travel, every day at 9:00 AM ET.',
   openGraph: mergeOpenGraph(),

@@ -4,6 +4,7 @@
 
 export type TagDeal = {
   id: number | string
+  slug?: string | null
   categorySlug?: string | null
   storeSlug?: string | null
 }
@@ -26,7 +27,12 @@ export function collectDropTags({
     if (deal.categorySlug) tags.add(`category:${deal.categorySlug}`)
     if (deal.storeSlug) tags.add(`store:${deal.storeSlug}`)
   }
-  for (const deal of expiredDeals) tags.add(`deal:${deal.id}`)
+  for (const deal of expiredDeals) {
+    tags.add(`deal:${deal.id}`)
+    // The deal page and the event hubs look deals up by slug / through the `deals` tag.
+    if (deal.slug) tags.add(`deal:${deal.slug}`)
+  }
+  if (expiredDeals.length > 0) tags.add('deals')
   return [...tags]
 }
 

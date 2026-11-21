@@ -58,7 +58,7 @@ describe('collectDropTags', () => {
         { id: 2, categorySlug: 'tech', storeSlug: 'globex' },
         { id: 3 },
       ],
-      expiredDeals: [{ id: 9, categorySlug: 'home', storeSlug: 'acme' }],
+      expiredDeals: [{ id: 9, slug: 'nine', categorySlug: 'home', storeSlug: 'acme' }],
     })
     expect(tags.sort()).toEqual(
       [
@@ -71,13 +71,15 @@ describe('collectDropTags', () => {
         'store:acme',
         'store:globex',
         'deal:9',
+        'deal:nine',
+        'deals',
       ].sort(),
     )
   })
 
   it('works without a new drop', () => {
     expect(collectDropTags({ expiredDeals: [{ id: 5 }] }).sort()).toEqual(
-      ['deal:5', 'drop:current', 'drops', 'sitemap'].sort(),
+      ['deal:5', 'deals', 'drop:current', 'drops', 'sitemap'].sort(),
     )
     expect(dropWarmPaths()).toEqual(['/'])
     expect(dropWarmPaths('2026-11-21')).toEqual(['/', '/drops/2026-11-21'])

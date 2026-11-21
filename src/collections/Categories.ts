@@ -15,6 +15,7 @@ const revalidateCategory: CollectionAfterChangeHook = ({ doc, previousDoc, req }
   revalidate({
     req,
     tags: [
+      'categories',
       `category:${doc.slug}`,
       previousDoc?.slug && previousDoc.slug !== doc.slug ? `category:${previousDoc.slug}` : null,
       'sitemap',
@@ -24,7 +25,7 @@ const revalidateCategory: CollectionAfterChangeHook = ({ doc, previousDoc, req }
 }
 
 const revalidateCategoryDelete: CollectionAfterDeleteHook = ({ doc, req }) => {
-  revalidate({ req, tags: [`category:${doc?.slug}`, 'sitemap'] })
+  revalidate({ req, tags: ['categories', `category:${doc?.slug}`, 'sitemap'] })
   return doc
 }
 

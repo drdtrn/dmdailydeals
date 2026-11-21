@@ -18,6 +18,7 @@ const revalidateEvent: CollectionAfterChangeHook = ({ doc, previousDoc, req }) =
     revalidate({
       req,
       tags: [
+        'events',
         `event:${doc.slug}`,
         previousDoc?.slug && previousDoc.slug !== doc.slug ? `event:${previousDoc.slug}` : null,
         'sitemap',
@@ -28,7 +29,7 @@ const revalidateEvent: CollectionAfterChangeHook = ({ doc, previousDoc, req }) =
 }
 
 const revalidateEventDelete: CollectionAfterDeleteHook = ({ doc, req }) => {
-  revalidate({ req, tags: [`event:${doc?.slug}`, 'sitemap'] })
+  revalidate({ req, tags: ['events', `event:${doc?.slug}`, 'sitemap'] })
   return doc
 }
 

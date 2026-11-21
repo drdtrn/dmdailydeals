@@ -33,7 +33,7 @@ const getPagesSitemap = unstable_cache(
 
     const defaultSitemap = [
       {
-        loc: `${SITE_URL}/posts`,
+        loc: `${SITE_URL}/blog`,
         lastmod: dateFallback,
       },
     ]
@@ -56,6 +56,9 @@ const getPagesSitemap = unstable_cache(
     tags: ['pages-sitemap'],
   },
 )
+
+// Reads the database, so it must never be prerendered at build time (the build needs no database).
+export const dynamic = 'force-dynamic'
 
 export async function GET() {
   const sitemap = await getPagesSitemap()

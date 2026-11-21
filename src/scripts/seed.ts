@@ -16,6 +16,7 @@ import sharp from 'sharp'
 
 import type { CollectionSlug, Payload, Where } from 'payload'
 
+import { buildProductKey } from '../lib/deals/productKey'
 import { getDropSettings } from '../lib/drops/settings'
 import { addDaysToYmd, computePublishAt, todayInTimezone } from '../lib/drops/time'
 
@@ -268,6 +269,36 @@ const TODAY_HERO = 0
 const TODAY_PICKS = [1, 2, 3, 4, 5, 6, 7]
 const YESTERDAY_HERO = 8
 const YESTERDAY_PICKS = [9, 10, 11, 12, 13, 14]
+
+/**
+ * Back-dated price history, so "Lowest in 90 days" shows up in development and the e2e tests.
+ * `daysAgo` is relative to the day the seed runs. The deals' current prices (see DEALS) decide the
+ * outcome:
+ * - indexes 0, 1, 2: history reaches back 30+ days and the current price is the lowest -> badge
+ * - index 3: a lower price 60 days ago -> no badge
+ * - index 4: only 10 days of history (less than the 30 needed) -> no badge
+ * Everything else has just the snapshot written when the deal was published -> no badge.
+ */
+const PRICE_HISTORY: Record<number, { daysAgo: number; price: number }[]> = {
+  0: [
+    { daysAgo: 75, price: 199 },
+    { daysAgo: 50, price: 169 },
+    { daysAgo: 25, price: 149 },
+  ],
+  1: [
+    { daysAgo: 45, price: 45 },
+    { daysAgo: 15, price: 39 },
+  ],
+  2: [{ daysAgo: 100, price: 159 }],
+  3: [
+    { daysAgo: 60, price: 29 },
+    { daysAgo: 30, price: 49 },
+  ],
+  4: [{ daysAgo: 10, price: 299 }],
+}
+
+/** Deals shown on the Black Friday event hub (indexes into DEALS). */
+const EVENT_DEALS = [0, 3, 15, 16, 17, 18, 19]
 
 const LEGAL_PAGES = [
   {
@@ -550,6 +581,83 @@ async function seed() {
     'EXAMPLE COPY. Yesterday: a robot vacuum at its lowest price plus six picks.',
   )
   log(`drops: ${today} (live), ${yesterday} (archived)`)
+
+  // Only one drop is live at a time. Earlier seeds (on other days) leave their drop marked live, so
+  // archive every live drop that is not today's; the home page shows the newest live drop.
+  const stale = await payload.find({
+    collection: 'drops',
+    where: { and: [{ status: { equals: 'live' } }, { slug: { not_equals: today } }] },
+    limit: 100,
+    depth: 0,
+    pagination: false,
+    overrideAccess: true,
+    context,
+  })
+  for (const drop of stale.docs) {
+    await payload.update({
+      collection: 'drops',
+      id: drop.id,
+      data: { status: 'archived' },
+      overrideAccess: true,
+      context,
+    })
+  }
+  if (stale.docs.length > 0) log(`archived ${stale.docs.length} stale live drop(s)`)
+
+  // Back-dated price history. Rows from this step have source "api"; a product key that already has
+  // one is skipped, so re-running the seed does not duplicate them.
+  const nowMs = Date.now()
+  let historyRows = 0
+  for (const [indexText, points] of Object.entries(PRICE_HISTORY)) {
+    const index = Number(indexText)
+    const seed = DEALS[index]
+    const productKey = buildProductKey(
+      storeIds.get(seed.store)!,
+      `https://${STORES.find((s) => s.name === seed.store)!.domain}/p/${slugify(seed.title)}`,
+    )
+    const existing = await findOne(payload, 'price-snapshots', {
+      and: [{ productKey: { equals: productKey } }, { source: { equals: 'api' } }],
+    })
+    if (existing) continue
+    for (const point of points) {
+      await payload.create({
+        collection: 'price-snapshots',
+        data: {
+          productKey,
+          price: point.price,
+          currency: 'USD',
+          capturedAt: new Date(nowMs - point.daysAgo * 86_400_000).toISOString(),
+          source: 'api',
+        },
+        overrideAccess: true,
+        context,
+      })
+      historyRows += 1
+    }
+  }
+  log(`price history: ${historyRows} back-dated snapshot(s) added`)
+
+  // Event hub: this year's Black Friday window.
+  const year = Number(today.slice(0, 4))
+  const existingEvent = await findOne(payload, 'events', { slug: { equals: 'black-friday' } })
+  if (!existingEvent) {
+    await payload.create({
+      collection: 'events',
+      data: {
+        name: 'Black Friday',
+        slug: 'black-friday',
+        startsAt: `${year}-11-20T14:00:00.000Z`,
+        endsAt: `${year}-12-01T04:59:00.000Z`,
+        intro:
+          'EXAMPLE COPY. Replace with original text. Our picks for the Black Friday window, limited to deals where the price history shows a real drop.',
+        deals: EVENT_DEALS.map((i) => dealIds[i]),
+        _status: 'published',
+      },
+      overrideAccess: true,
+      context,
+    })
+  }
+  log('event: black-friday')
 
   // Always-on offer (the eSIM slot). All values are placeholders.
   const offerImage = await upsertMedia(

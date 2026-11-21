@@ -49,4 +49,27 @@ const nextConfig: NextConfig = {
   },
 }
 
-export default withPayload(nextConfig, { devBundleServerPackages: false })
+const payloadConfig = withPayload(nextConfig, { devBundleServerPackages: false })
+const payloadHeaders = payloadConfig.headers
+
+/**
+ * withPayload adds `Critical-CH: Sec-CH-Prefers-Color-Scheme` to every route so the admin can follow
+ * the OS theme. Critical-CH makes a browser repeat its first request to a site, which costs the
+ * public pages about 600 ms (Lighthouse reports it as a redirect). The public site does not use the
+ * hint, so keep Payload's client-hint headers on /admin only.
+ */
+export default {
+  ...payloadConfig,
+  headers: async () => {
+    const rules = (await payloadHeaders?.()) ?? []
+    return rules.flatMap((rule) => {
+      if (rule.source !== '/:path*') return [rule]
+      const hints = ['accept-ch', 'critical-ch', 'vary']
+      const others = rule.headers.filter((h) => !hints.includes(h.key.toLowerCase()))
+      return [
+        { ...rule, source: '/admin/:path*' },
+        ...(others.length ? [{ ...rule, headers: others }] : []),
+      ]
+    })
+  },
+} satisfies NextConfig

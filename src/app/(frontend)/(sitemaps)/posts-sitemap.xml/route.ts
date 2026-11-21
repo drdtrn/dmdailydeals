@@ -35,7 +35,7 @@ const getPostsSitemap = unstable_cache(
       ? results.docs
           .filter((post) => Boolean(post?.slug))
           .map((post) => ({
-            loc: `${SITE_URL}/posts/${post?.slug}`,
+            loc: `${SITE_URL}/blog/${post?.slug}`,
             lastmod: post.updatedAt || dateFallback,
           }))
       : []
@@ -47,6 +47,9 @@ const getPostsSitemap = unstable_cache(
     tags: ['posts-sitemap'],
   },
 )
+
+// Reads the database, so it must never be prerendered at build time (the build needs no database).
+export const dynamic = 'force-dynamic'
 
 export async function GET() {
   const sitemap = await getPostsSitemap()

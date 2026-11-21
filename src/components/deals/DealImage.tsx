@@ -64,6 +64,7 @@ export function DealImage({
           fill
           sizes={sizes}
           preload={preload}
+          fetchPriority={preload ? 'high' : undefined}
           loading={eager && !preload ? 'eager' : undefined}
           className={cn('object-cover', muted && 'opacity-60 grayscale')}
         />

@@ -1,6 +1,7 @@
 import configPromise from '@payload-config'
 import { getPayload } from 'payload'
 import { unstable_cache } from 'next/cache'
+import { connection } from 'next/server'
 
 export async function getRedirects(depth = 1) {
   const payload = await getPayload({ config: configPromise })
@@ -20,7 +21,9 @@ export async function getRedirects(depth = 1) {
  *
  * Cache all redirects together to avoid multiple fetches.
  */
-export const getCachedRedirects = () =>
-  unstable_cache(async () => getRedirects(), ['redirects'], {
+export const getCachedRedirects = () => async () => {
+  await connection()
+  return unstable_cache(async () => getRedirects(), ['redirects'], {
     tags: ['redirects'],
-  })
+  })()
+}

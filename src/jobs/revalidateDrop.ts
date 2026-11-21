@@ -33,7 +33,7 @@ async function toTagDeal(req: PayloadRequest, deal: Deal | number | string): Pro
     slugOf(req, 'categories', relId(full.category)),
     slugOf(req, 'stores', relId(full.store)),
   ])
-  return { id: full.id, categorySlug, storeSlug }
+  return { id: full.id, slug: full.slug, categorySlug, storeSlug }
 }
 
 /** A failed warm-up never fails the job: the pages simply regenerate on the next real request. */

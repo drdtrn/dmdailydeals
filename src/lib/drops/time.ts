@@ -72,6 +72,21 @@ export function ymdFromDateValue(value: Date | string): string {
   return match[1]
 }
 
+/**
+ * Strictly parse a `YYYY-MM-DD` URL segment. Returns the same string when it is a real calendar date
+ * (so "2026-02-30" and "2026-1-5" are rejected), otherwise null.
+ */
+export function parseDropDate(value: string | null | undefined): string | null {
+  if (typeof value !== 'string') return null
+  const match = YMD_RE.exec(value)
+  if (!match) return null
+  const [y, m, d] = [Number(match[1]), Number(match[2]), Number(match[3])]
+  const date = new Date(Date.UTC(y, m - 1, d))
+  const valid =
+    date.getUTCFullYear() === y && date.getUTCMonth() === m - 1 && date.getUTCDate() === d
+  return valid ? value : null
+}
+
 /** The calendar day `n` days after `ymd` (negative for earlier). */
 export function addDaysToYmd(ymd: string, n: number): string {
   const match = YMD_RE.exec(ymd)

@@ -134,6 +134,8 @@ async function dealTags(
   ])
   return [
     deal.id !== undefined ? `deal:${deal.id}` : null,
+    // The deal page looks the deal up by slug, which can't know the id up front.
+    deal.slug ? `deal:${deal.slug}` : null,
     category ? `category:${category}` : null,
     store ? `store:${store}` : null,
   ]
@@ -156,6 +158,7 @@ export const revalidateDeal: CollectionAfterChangeHook<Deal> = async ({
       tags: [
         ...(await dealTags(req, doc)),
         ...(wasVisible ? await dealTags(req, previousDoc) : []),
+        'deals',
         'drop:current',
         'drops',
         'sitemap',
@@ -172,7 +175,7 @@ export const revalidateDealDelete: CollectionAfterDeleteHook<Deal> = async ({ do
   try {
     revalidate({
       req,
-      tags: [...(await dealTags(req, doc)), 'drop:current', 'drops', 'sitemap'],
+      tags: [...(await dealTags(req, doc)), 'deals', 'drop:current', 'drops', 'sitemap'],
     })
   } catch (err) {
     req.payload.logger.warn({ err, msg: 'Deal revalidation skipped' })

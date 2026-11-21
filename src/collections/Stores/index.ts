@@ -15,6 +15,7 @@ const revalidateStore: CollectionAfterChangeHook = ({ doc, previousDoc, req }) =
   revalidate({
     req,
     tags: [
+      'stores',
       `store:${doc.slug}`,
       previousDoc?.slug && previousDoc.slug !== doc.slug ? `store:${previousDoc.slug}` : null,
       'sitemap',
@@ -24,7 +25,7 @@ const revalidateStore: CollectionAfterChangeHook = ({ doc, previousDoc, req }) =
 }
 
 const revalidateStoreDelete: CollectionAfterDeleteHook = ({ doc, req }) => {
-  revalidate({ req, tags: [`store:${doc?.slug}`, 'sitemap'] })
+  revalidate({ req, tags: ['stores', `store:${doc?.slug}`, 'sitemap'] })
   return doc
 }
 

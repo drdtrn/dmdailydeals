@@ -80,6 +80,12 @@ jobs:
       - name: Integration tests
         run: pnpm test:int
 
+      # The e2e tests read seeded content (drop, deals, stores, offer, pages). The integration tests
+      # above empty the content collections when they finish, so the seed starts from a clean slate.
+      # "Today" is computed in the drop timezone, so the home page always has a live drop.
+      - name: Seed example content
+        run: pnpm seed
+
       - name: Build
         run: pnpm build
 

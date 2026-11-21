@@ -24,8 +24,8 @@ describe('revalidate helper', () => {
   it('calls revalidateTag with the two-argument form and de-duplicates', () => {
     revalidate({ req: makeReq(), tags: ['a', 'a', null, false, 'b'], paths: ['/x'] })
     expect(revalidateTag.mock.calls).toEqual([
-      ['a', 'max'],
-      ['b', 'max'],
+      ['a', { expire: 0 }],
+      ['b', { expire: 0 }],
     ])
     expect(revalidatePath).toHaveBeenCalledWith('/x')
   })

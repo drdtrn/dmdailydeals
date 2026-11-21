@@ -1,4 +1,5 @@
 import { CATEGORY_LINKS, categoryHref } from '@/lib/categories'
+import { docHref } from '@/lib/docHref'
 import type { Footer, Header } from '@/payload-types'
 
 export type NavLink = { label: string; href: string; newTab?: boolean }
@@ -31,7 +32,7 @@ export function cmsLinks(items: CmsNavItems): NavLink[] {
     const ref = link.reference
     const href =
       link.type === 'reference' && ref && typeof ref.value === 'object' && ref.value.slug
-        ? `${ref.relationTo === 'pages' ? '' : `/${ref.relationTo}`}/${ref.value.slug}`
+        ? docHref(ref.relationTo, ref.value.slug)
         : link.url
     if (!href || !link.label) continue
     out.push({ label: link.label, href, newTab: !!link.newTab })

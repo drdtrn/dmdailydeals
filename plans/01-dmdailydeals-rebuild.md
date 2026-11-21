@@ -652,6 +652,26 @@ Also confirm the chosen search API's endpoints, result format, terms and pricing
 - No client-only data fetching for primary content.
 - No `next/head`.
 
+**Outcome (2026-11-21): done.** Every route in the URL map renders server-side. CI's full sequence (fresh database → migrate → integration tests → seed → build → 47 e2e) passes. Deviations and notes for later phases:
+- **Rendering changed from ISR to per-request rendering with cached data.** Every Payload read goes through `readCached` (`src/lib/data/cache.ts`), which awaits `connection()` and then wraps `unstable_cache` with the URL-map tags. `generateStaticParams` is gone. This replaces architecture choice 2's ISR, for three reasons:
+  - **The build needs no database.** Verified with an unreachable `DATABASE_URL`. That solves Phase 2's migrate-during-build race and lets Phase 9 build the image without a database.
+  - The countdown target and live/expired states are always current.
+  - Edits show on the next request.
+
+  On a production server, every route answers in 20–120 ms.
+- **`revalidate()` uses `revalidateTag(tag, { expire: 0 })`**, so edits appear on the next request. The deals hook also emits `deal:<slug>` and `deals`. Stores, categories and events emit their plural tags. Invalidation is deliberately broad for correctness.
+- **404s:** real 404 status plus `noindex` for unknown slugs, and for stores with no published deals. Next 16.4.6 renders the not-found *body* only with JavaScript (an `__next_error__` shell in raw HTML). Status and `noindex` are correct for crawlers.
+- **The blog moved from `/posts` to `/blog`**, with permanent redirects for `/posts`, `/posts/page/:n` and `/posts/:slug`.
+- **"Lowest in 90 days"** is claimed only when snapshots cover at least 30 of the last 90 days and the current price ≤ the window's minimum (`isLowestInWindow`, unit-tested). The seed back-dates snapshots so the badge shows in dev.
+- **`withPayload`'s `Critical-CH` / `Accept-CH` headers are limited to `/admin`.** They made Chrome repeat the first request (about 600 ms).
+- **Lighthouse (mobile, simulated throttling) on the seeded home:**
+  - Performance 0.90–0.91, accessibility 1.00, SEO 1.00.
+  - **LCP is 3.5–3.7 s (the hero image), above the 2.5 s budget**, so it needs tuning later: image sizes and format, preloading, trimming JavaScript and CSS.
+- **CI runs `pnpm seed` after the integration tests and before e2e.**
+- **Two issues for Phase 6 to fix:**
+  - On pages in the Home category the breadcrumb reads "Home › Home". The root crumb needs another label.
+  - React warns about the inline theme `<script>` in the root layout. Move it to an idiomatic form.
+
 ## Phase 6 — SEO and AI-SEO layer
 
 > **How this serves the primary goal:** this phase is what lets Google and AI assistants find, understand and cite the drops in the first place. It is the growth engine before any affiliate program is active.

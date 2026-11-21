@@ -1,113 +1,137 @@
 import type { Metadata } from 'next'
-
-import { PayloadRedirects } from '@/components/PayloadRedirects'
-import configPromise from '@payload-config'
-import { getPayload, type RequiredDataFromCollectionSlug } from 'payload'
 import { draftMode } from 'next/headers'
+import configPromise from '@payload-config'
+import { getPayload } from 'payload'
 import React, { cache } from 'react'
 
 import { RenderBlocks } from '@/blocks/RenderBlocks'
-import { RenderHero } from '@/heros/RenderHero'
-import { generateMeta } from '@/utilities/generateMeta'
+import { DisclosureNote } from '@/components/deals/DisclosureNote'
 import { LivePreviewListener } from '@/components/LivePreviewListener'
+import { DealGrid } from '@/components/pages/DealGrid'
+import { PageHeading } from '@/components/pages/PageHeading'
+import { PayloadRedirects } from '@/components/PayloadRedirects'
+import { RenderHero } from '@/heros/RenderHero'
+import { getEventBySlug, getPageBySlug } from '@/lib/data/content'
+import { getLowestFlags } from '@/lib/data/deals'
+import { formatDateRange } from '@/lib/format'
+import { clipDescription, pageMetadata } from '@/lib/seo/meta'
+import { generateMeta } from '@/utilities/generateMeta'
 
-export async function generateStaticParams() {
-  const payload = await getPayload({ config: configPromise })
-  const pages = await payload.find({
-    collection: 'pages',
-    draft: false,
-    limit: 1000,
-    overrideAccess: false,
-    pagination: false,
-    select: {
-      slug: true,
-    },
-  })
+/**
+ * One dynamic segment serves two kinds of document: CMS pages (/about, /disclosure, ...) and event
+ * hubs (/black-friday). A page wins over an event with the same slug; anything else is a 404.
+ * Static routes (/esim, /blog, ...) always win over this segment.
+ */
+type Args = { params: Promise<{ slug?: string }> }
 
-  const params = pages.docs
-    ?.filter((doc) => {
-      return doc.slug !== 'home'
-    })
-    .map(({ slug }) => {
-      return { slug }
-    })
-
-  return params
+/** `decodeURIComponent` throws on malformed escapes ("%E0%A4%A"); treat those as an unknown slug. */
+function decodeSlug(slug = ''): string {
+  try {
+    return decodeURIComponent(slug)
+  } catch {
+    return ''
+  }
 }
 
-type Args = {
-  params: Promise<{
-    slug?: string
-  }>
+/** Draft mode (admin preview) reads the draft straight from Payload, uncached. */
+const queryDraftPage = cache(async (slug: string) => {
+  const payload = await getPayload({ config: configPromise })
+  const result = await payload.find({
+    collection: 'pages',
+    draft: true,
+    limit: 1,
+    pagination: false,
+    overrideAccess: true,
+    where: { slug: { equals: slug } },
+  })
+  return result.docs?.[0] || null
+})
+
+async function loadPage(slug: string) {
+  const { isEnabled: draft } = await draftMode()
+  return draft ? queryDraftPage(slug) : getPageBySlug(slug)
 }
 
 export default async function Page({ params: paramsPromise }: Args) {
   const { isEnabled: draft } = await draftMode()
-  const { slug = 'home' } = await paramsPromise
-  // Decode to support slugs with special characters
-  const decodedSlug = decodeURIComponent(slug)
+  const decodedSlug = decodeSlug((await paramsPromise).slug)
   const url = '/' + decodedSlug
-  const page: RequiredDataFromCollectionSlug<'pages'> | null = await queryPageBySlug({
-    slug: decodedSlug,
-  })
 
-  // Placeholder until the real home page (today's drop) is built in Phase 5.
-  if (!page && slug === 'home') {
+  const page = await loadPage(decodedSlug)
+
+  if (page) {
+    const { hero, layout } = page
     return (
-      <article className="container py-24">
-        <h1 className="text-4xl">DMDailyDeals</h1>
-        <p className="mt-4">The new site is under construction.</p>
+      <article className="pb-24">
+        {/* Allows redirects for valid pages too */}
+        <PayloadRedirects disableNotFound url={url} />
+        {draft && <LivePreviewListener />}
+
+        {/* The page title is the h1. Image heroes still render above the content. */}
+        {hero?.type === 'highImpact' || hero?.type === 'mediumImpact' ? (
+          <RenderHero {...hero} />
+        ) : null}
+        <div className="container">
+          <PageHeading title={page.title} />
+        </div>
+        <RenderBlocks blocks={layout} />
       </article>
     )
   }
 
-  if (!page) {
-    return <PayloadRedirects url={url} />
+  const found = await getEventBySlug(decodedSlug)
+  if (found) {
+    const { event, deals } = found
+    const lowest = await getLowestFlags(deals)
+    const window = formatDateRange(event.startsAt, event.endsAt)
+    return (
+      <div className="container pb-8">
+        <PageHeading
+          crumbs={[{ label: 'Home', href: '/' }, { label: event.name }]}
+          eyebrow={window ? `Event · ${window}` : 'Event'}
+          title={`${event.name} deals`}
+          lead={event.intro}
+        />
+        {deals.length > 0 ? (
+          <>
+            <DisclosureNote className="mb-6" />
+            <DealGrid
+              deals={deals}
+              lowest={lowest}
+              headingLevel="h2"
+              label={`${event.name} deals`}
+              eagerCount={2}
+            />
+          </>
+        ) : (
+          <p className="text-soft-foreground">
+            We have not picked any {event.name} deals yet. Check back as the event gets closer.
+          </p>
+        )}
+      </div>
+    )
   }
 
-  const { hero, layout } = page
-
-  return (
-    <article className="pt-16 pb-24">
-      {/* Allows redirects for valid pages too */}
-      <PayloadRedirects disableNotFound url={url} />
-
-      {draft && <LivePreviewListener />}
-
-      <RenderHero {...hero} />
-      <RenderBlocks blocks={layout} />
-    </article>
-  )
+  return <PayloadRedirects url={url} />
 }
 
 export async function generateMetadata({ params: paramsPromise }: Args): Promise<Metadata> {
-  const { slug = 'home' } = await paramsPromise
-  // Decode to support slugs with special characters
-  const decodedSlug = decodeURIComponent(slug)
-  const page = await queryPageBySlug({
-    slug: decodedSlug,
-  })
+  const decodedSlug = decodeSlug((await paramsPromise).slug)
+  const page = await loadPage(decodedSlug)
+  if (page) return generateMeta({ doc: page, path: `/${decodedSlug}` })
 
-  return generateMeta({ doc: page })
+  const found = await getEventBySlug(decodedSlug)
+  if (found) {
+    const { event } = found
+    return pageMetadata({
+      title: event.meta?.title || `${event.name} deals`,
+      description:
+        event.meta?.description ||
+        clipDescription(event.intro) ||
+        `Our picks for ${event.name}: ${formatDateRange(event.startsAt, event.endsAt)}.`,
+      path: `/${decodedSlug}`,
+      image: event.meta?.image,
+    })
+  }
+  return {}
 }
-
-const queryPageBySlug = cache(async ({ slug }: { slug: string }) => {
-  const { isEnabled: draft } = await draftMode()
-
-  const payload = await getPayload({ config: configPromise })
-
-  const result = await payload.find({
-    collection: 'pages',
-    draft,
-    limit: 1,
-    pagination: false,
-    overrideAccess: draft,
-    where: {
-      slug: {
-        equals: slug,
-      },
-    },
-  })
-
-  return result.docs?.[0] || null
-})

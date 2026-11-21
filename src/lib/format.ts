@@ -92,3 +92,42 @@ export function formatDropAt(iso: string, timeZone = DISPLAY_TIME_ZONE): string 
   const time = formatDropTime(iso, timeZone)
   return day && time ? `${day}, ${time}` : ''
 }
+
+/** "Saturday, November 21, 2026" (the year matters in the archive). */
+export function formatFullDate(iso: string, timeZone = DISPLAY_TIME_ZONE): string {
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return ''
+  return new Intl.DateTimeFormat(LOCALE, {
+    timeZone,
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  }).format(date)
+}
+
+/** "Nov 20 – Dec 1, 2026" for an event window; either end may be missing. */
+export function formatDateRange(
+  startIso?: string | null,
+  endIso?: string | null,
+  timeZone = DISPLAY_TIME_ZONE,
+): string {
+  const fmt = (iso: string, withYear: boolean) => {
+    const date = new Date(iso)
+    if (Number.isNaN(date.getTime())) return ''
+    return new Intl.DateTimeFormat(LOCALE, {
+      timeZone,
+      month: 'short',
+      day: 'numeric',
+      ...(withYear ? { year: 'numeric' } : {}),
+    }).format(date)
+  }
+  if (startIso && endIso) {
+    const a = fmt(startIso, false)
+    const b = fmt(endIso, true)
+    return a && b ? `${a} – ${b}` : ''
+  }
+  if (startIso) return `From ${fmt(startIso, true)}`
+  if (endIso) return `Until ${fmt(endIso, true)}`
+  return ''
+}

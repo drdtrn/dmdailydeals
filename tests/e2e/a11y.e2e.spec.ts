@@ -49,6 +49,52 @@ for (const viewport of viewports) {
   }
 }
 
+/**
+ * The real pages, on the seeded data: the home page and a live deal page, at both sizes and in
+ * both colour schemes.
+ */
+const realPages = [
+  { name: 'home', path: '/' },
+  { name: 'deal', path: '/deal/over-ear-wireless-noise-cancelling-headphones' },
+]
+
+for (const { name, path } of realPages) {
+  for (const viewport of viewports) {
+    for (const colorScheme of schemes) {
+      test(`${name} page has no serious axe violations (${viewport.name}, ${colorScheme})`, async ({
+        browser,
+      }) => {
+        const context = await browser.newContext({
+          viewport: { width: viewport.width, height: viewport.height },
+          colorScheme,
+        })
+        const page = await context.newPage()
+        await page.goto(`http://localhost:3000${path}`, { waitUntil: 'networkidle' })
+        await expect(page.locator('h1')).toHaveCount(1)
+
+        const results = await new AxeBuilder({ page })
+          .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'])
+          .exclude('nextjs-portal')
+          .analyze()
+
+        const blocking = results.violations.filter(
+          (v) => v.impact === 'serious' || v.impact === 'critical',
+        )
+        expect(
+          blocking.map((v) => ({
+            id: v.id,
+            impact: v.impact,
+            help: v.help,
+            nodes: v.nodes.slice(0, 3).map((n) => n.target.join(' ')),
+          })),
+        ).toEqual([])
+
+        await context.close()
+      })
+    }
+  }
+}
+
 test('styleguide is not indexable', async ({ page }) => {
   await page.goto('http://localhost:3000/styleguide')
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/)

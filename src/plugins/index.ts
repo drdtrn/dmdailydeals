@@ -9,13 +9,16 @@ import { Page, Post } from '@/payload-types'
 import { getServerSideURL } from '@/utilities/getURL'
 
 const generateTitle: GenerateTitle<Post | Page> = ({ doc }) => {
-  return doc?.title ? `${doc.title} | DMDailyDeals` : 'DMDailyDeals'
+  // The site name is added by the root layout's title template.
+  return doc?.title ?? 'DMDailyDeals'
 }
 
 const generateURL: GenerateURL<Post | Page> = ({ doc }) => {
   const url = getServerSideURL()
 
-  return doc?.slug ? `${url}/${doc.slug}` : url
+  if (!doc?.slug) return url
+  // Posts are served under /blog.
+  return 'layout' in doc ? `${url}/${doc.slug}` : `${url}/blog/${doc.slug}`
 }
 
 export const plugins: Plugin[] = [
