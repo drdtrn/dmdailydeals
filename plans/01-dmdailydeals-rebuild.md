@@ -42,8 +42,8 @@ Someone who arrives at dmdailydeals.com, whether from Google, an AI assistant, t
 | D6 | Package manager | **pnpm** (the Payload templates use it) | Phase 1 |
 | D8 | Publishing AI-drafted blog posts | **A human review is required before publishing.** An `aiAssisted` post can't be published until `reviewedBy` is set. Unreviewed AI content at volume is exactly what Google's scaled-content-abuse policy targets. | Phase 8 |
 | D9 | AI provider account(s) | You create API keys with DeepSeek and/or OpenAI and set **monthly spend limits** there. The per-draft cost estimate comes from the §D discovery pass. | Phase 8 |
-| D10 | OpenAI-format library | **The official `openai` npm SDK with a configurable `baseURL`** (DeepSeek and OpenAI both accept it; verify in §D discovery). If more providers are needed later, swap in a LiteLLM gateway container behind the same interface. | Phase 8 |
-| D11 | Search API for the research step | To decide after the §D discovery pass (candidates: Brave Search API, Tavily, Exa, Serper). It's needed because built-in web search isn't portable across providers. | Phase 8 |
+| D10 | OpenAI-format library | **Decided 2026-11-21:** the official `openai` npm SDK on Chat Completions with a configurable `baseURL`, behind a capability-driven `chat()` (see §D). If more providers are needed later, swap in a LiteLLM gateway container behind the same interface. | Phase 8 |
+| D11 | Search API for the research step | **Decided 2026-11-21: Tavily** (basic search, free tier, no storage restriction) behind a `SearchProvider` interface; Brave as the swap-in (see §D). | Phase 8 |
 
 ---
 
@@ -388,31 +388,83 @@ Notes:
 
 ---
 
-### §D AI provider layer (provider-neutral, OpenAI-compatible) — ⚠️ discovery still needed
+### §D AI provider layer (provider-neutral, OpenAI-compatible): discovery done 2026-11-21
 
-Decided on 2026-11-21: AI calls go through a **provider-neutral layer that uses OpenAI's request format**. Candidate providers are **DeepSeek or OpenAI**, switchable by config. The Claude-specific research done earlier no longer applies.
+Decided on 2026-11-21: AI calls go through a **provider-neutral layer that uses OpenAI's request format**, with **DeepSeek or OpenAI** switchable by config.
 
-**Known constraints to design around (verify in a discovery pass before Phase 8):**
-- **Web search is not portable.** Built-in search differs per provider: OpenAI's is a tool in its own API, and DeepSeek's API is not known to offer one. So research uses a **separate search API**, called through standard function calling (D11). That works the same on any provider.
-- **Structured output is not uniform.** Some providers support strict JSON schema, others only "JSON mode". The layer always asks for JSON, then **validates with zod** and retries once with the errors quoted back. That works whether or not strict schema is available.
-- Context window, output limits, function-calling support and pricing are per-provider config values. Never hard-code them.
+**Discovery findings (2026-11-21).** These come from the providers' docs and pricing pages fetched that day: api-docs.deepseek.com, platform.openai.com/docs, docs.tavily.com, the Brave Search API docs and exa.ai. No live API calls were made. Prices and model names change, so **re-check them before turning the feature on.**
 
-**Discovery pass (run before Phase 8, same reporting contract as Phase 0):** confirm the following, with sources, for each candidate provider:
-- the base URL and OpenAI-SDK compatibility
-- model IDs
-- JSON-schema vs JSON-mode support
-- function/tool calling
-- context and output limits
-- pricing
-- rate limits
+*DeepSeek*
+- **Endpoint:** base URL `https://api.deepseek.com`, OpenAI Chat Completions format. The `openai` SDK works through `baseURL`.
+- **Models:** `deepseek-flash` (V4.1-Flash) and `deepseek-v4-pro`. Both have a 1M-token context and up to 384K output tokens. Thinking is on by default; turn it off with `thinking: { type: 'disabled' }`.
+- **Structured output:** `json_object` only (no documented `json_schema`). The prompt must contain the word "json" plus an example. A blank reply can still come back with `finish_reason: stop`, so validate and retry.
+- **Tools:** with thinking on, `reasoning_content` must be echoed back on every turn, or the API returns 400. Simplest: thinking off for tool loops.
+- **Price per 1M tokens (peak; off-peak is half):**
+  - Flash: $0.30 input miss, $0.006 input hit, $1.20 output.
+  - V4-Pro: $1.32 / $0.044 / $3.96.
+- **Limits and usage:**
+  - Rate limits are per-account concurrency, with no tiers.
+  - Usage fields: `prompt_cache_hit_tokens`, `prompt_cache_miss_tokens` and `completion_tokens_details.reasoning_tokens`.
+- **Unconfirmed:** strict tools (beta), `parallel_tool_calls`, and whether the legacy `deepseek-chat` / `deepseek-reasoner` names still work.
 
-Also confirm the chosen search API's endpoints, result format, terms and pricing.
+*OpenAI*
+- **Models:** `gpt-6.2-astra`, `gpt-6.2-sol`, `gpt-6.1-terra` and `gpt-6-luna`. All have a 1.05M context and 128K output. Reasoning is an effort setting, not a separate model.
+- **Price per 1M tokens:**
+  - `gpt-6-luna`: $0.10 input, $0.01 cached, $0.50 output.
+  - `gpt-6.1-terra`: $1 / $0.05 / $5.
+- **Structured output:** strict `json_schema` works on Chat Completions.
+- **Tools:**
+  - Luna supports function calling on Chat Completions only with `reasoning_effort: 'none'`.
+  - Terra's model page says tools need the Responses API, which conflicts with the Chat Completions reference. **Test this.**
+- **Endpoint:** Chat Completions is supported with no sunset date. OpenAI recommends Responses for new projects.
+- **Shutdowns:** gpt-5, gpt-5-mini, gpt-5-nano and o3 shut down 2026-12-11; gpt-4.1 and gpt-4.1-mini on 2027-01-14. **Never default to them.**
+- **Rate limits:** tiers by cumulative spend.
+
+*`openai` npm SDK*
+- `new OpenAI({ apiKey, baseURL, timeout, maxRetries })`. Defaults: 10-minute timeout, 2 retries. ESM + CJS with types; Node ≥ 22.
+- Latest is 7.62.0 (2026-11-20). **Pin a version old enough for pnpm's minimumReleaseAge guard.**
+- **Don't use the SDK's `zodResponseFormat` / `.parse` helpers with DeepSeek**, because they send `json_schema`.
+
+*Search APIs (D11)*
+- **Tavily**
+  - Endpoint: `POST https://api.tavily.com/search`, Bearer auth.
+  - Cost: `search_depth: 'basic'` is 1 credit. Free tier is 1,000 credits/month with no card, then $0.008/credit.
+  - Results include LLM-ready `content` snippets. The terms don't restrict storing results.
+- **Brave**
+  - Endpoint: `GET https://api.search.brave.com/res/v1/web/search`, header `X-Subscription-Token`.
+  - Cost: $5 per 1k queries, with a small monthly free credit.
+  - **Its terms forbid storing results beyond transient use.**
+- **Exa:** `POST https://api.exa.ai/search`, $4–7 per 1k, plus content fees.
+- **Serper:** about $1 per 1k, but only third-party sources confirm it.
+
+*Cost per draft* (~8 searches, ~30k input tokens at the miss rate, ~6k output tokens, thinking off)
+
+| Model | Model cost per draft |
+|---|---|
+| `deepseek-flash` | ≈ $0.016 peak / $0.008 off-peak |
+| `gpt-6-luna` | ≈ $0.006 |
+| `deepseek-v4-pro` | ≈ $0.063 |
+| `gpt-6.1-terra` | ≈ $0.060 |
+
+Searches add ≈ $0.064 per draft (Tavily pay-as-you-go) once past the free tier. **Search is 80–90% of the cost on the cheap models.**
+
+**Decisions taken from this pass (2026-11-21)**
+- **D10:**
+  - The official `openai` SDK on **Chat Completions**, behind one `chat()` function so a Responses adapter can be added later.
+  - The layer is **capability-driven**: per-provider config for whether `json_schema` is supported, whether strict tools are supported, how to turn thinking off, and the token-limit parameter name.
+  - JSON mode: OpenAI uses strict `json_schema`; DeepSeek uses `json_object`. Both are validated with zod and retried once with the errors quoted back.
+  - Defaults:
+    - DeepSeek: `deepseek-flash` with thinking off.
+    - OpenAI: `gpt-6-luna` with `reasoning_effort: 'none'`.
+    - Model IDs and prices are **config, never hard-coded**.
+- **D11:** **Tavily** (`search_depth: 'basic'`), behind a `SearchProvider` interface so Brave can be swapped in. Store only result URLs, titles and our own notes.
 
 **Anti-patterns**
 - Provider-specific SDK calls outside the provider layer.
 - Model IDs or prices hard-coded in task code.
 - Trusting model JSON without zod validation.
 - Relying on a provider's built-in web search.
+- Storing raw search-result snippets.
 
 ---
 
