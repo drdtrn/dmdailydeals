@@ -1,6 +1,4 @@
-'use client'
 import { cn } from '@/utilities/ui'
-import useClickableCard from '@/utilities/useClickableCard'
 import Link from 'next/link'
 import React, { Fragment } from 'react'
 
@@ -10,6 +8,10 @@ import { Media } from '@/components/Media'
 
 export type CardPostData = Pick<Post, 'slug' | 'categories' | 'meta' | 'title'>
 
+/**
+ * Editorial card for a blog post (server component). The whole card is clickable through a
+ * stretched link, so it needs no client code or refs.
+ */
 export const Card: React.FC<{
   alignItems?: 'center'
   className?: string
@@ -18,7 +20,6 @@ export const Card: React.FC<{
   showCategories?: boolean
   title?: string
 }> = (props) => {
-  const { card, link } = useClickableCard({})
   const { className, doc, relationTo, showCategories, title: titleFromProps } = props
 
   const { slug, categories, meta, title } = doc || {}
@@ -32,18 +33,21 @@ export const Card: React.FC<{
   return (
     <article
       className={cn(
-        'border border-border rounded-lg overflow-hidden bg-card hover:cursor-pointer',
+        'group relative overflow-hidden rounded-md border border-border bg-card transition-colors hover:border-border-strong',
         className,
       )}
-      ref={card.ref}
     >
-      <div className="relative w-full ">
-        {!metaImage && <div className="">No image</div>}
+      <div className="relative w-full">
+        {!metaImage && (
+          <div className="flex aspect-[4/3] items-center justify-center bg-surface text-sm text-muted-foreground">
+            No image
+          </div>
+        )}
         {metaImage && typeof metaImage !== 'string' && <Media resource={metaImage} size="33vw" />}
       </div>
       <div className="p-4">
         {showCategories && hasCategories && (
-          <div className="uppercase text-sm mb-4">
+          <div className="mb-3 text-xs tracking-[0.12em] text-muted-foreground uppercase">
             {categories?.map((category, index) => {
               if (typeof category === 'object') {
                 const { title: titleFromCategory } = category
@@ -65,15 +69,13 @@ export const Card: React.FC<{
           </div>
         )}
         {titleToUse && (
-          <div className="prose">
-            <h3>
-              <Link className="not-prose" href={href} ref={link.ref}>
-                {titleToUse}
-              </Link>
-            </h3>
-          </div>
+          <h3 className="font-display text-xl leading-tight font-medium">
+            <Link href={href} className="after:absolute after:inset-0 group-hover:underline">
+              {titleToUse}
+            </Link>
+          </h3>
         )}
-        {description && <div className="mt-2">{description && <p>{sanitizedDescription}</p>}</div>}
+        {description && <p className="mt-2 text-soft-foreground">{sanitizedDescription}</p>}
       </div>
     </article>
   )

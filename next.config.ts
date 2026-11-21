@@ -19,12 +19,9 @@ const nextConfig: NextConfig = {
     loadPaths: ['./node_modules/@payloadcms/ui/dist/scss/'],
   },
   images: {
-    localPatterns: [
-      {
-        pathname: '/api/media/file/**',
-      },
-    ],
-    qualities: [100],
+    // Local images only: Payload uploads and the brand marks in /public/brand.
+    localPatterns: [{ pathname: '/api/media/file/**' }, { pathname: '/brand/**' }],
+    qualities: [75],
     remotePatterns: [
       ...[NEXT_PUBLIC_SERVER_URL /* 'https://example.com' */].map((item) => {
         const url = new URL(item)

@@ -7,7 +7,11 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['./vitest.setup.ts'],
-    include: ['tests/int/**/*.int.spec.ts', 'tests/unit/**/*.unit.spec.ts'],
+    include: [
+      'tests/int/**/*.int.spec.ts',
+      'tests/unit/**/*.unit.spec.ts',
+      'tests/unit/**/*.unit.spec.tsx',
+    ],
     // Integration tests share one database, so run test files one at a time.
     fileParallelism: false,
     testTimeout: 30_000,

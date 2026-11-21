@@ -25,13 +25,11 @@ const eslintConfig = [
     },
   },
   {
-    // TEMPORARY: template components (Theme, ThemeSelector, Header, Card) break these React 19
-    // hook rules. Those components are replaced in Phase 4 — set both back to 'error' then.
-    // Same files glob as eslint-config-next's block that registers the react-hooks plugin.
+    // React 19 hook rules, strict. (Set explicitly so a config-next default change cannot loosen them.)
     files: ['**/*.{js,jsx,mjs,ts,tsx,mts,cts}'],
     rules: {
-      'react-hooks/set-state-in-effect': 'warn',
-      'react-hooks/refs': 'warn',
+      'react-hooks/set-state-in-effect': 'error',
+      'react-hooks/refs': 'error',
     },
   },
   {

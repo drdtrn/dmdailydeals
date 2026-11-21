@@ -584,7 +584,7 @@ Also confirm the chosen search API's endpoints, result format, terms and pricing
 - **`scripts/cron-loop.sh` (`pnpm cron:dev`)** is POSIX sh + curl, configured with `BASE_URL`, `CRON_SECRET`, `INTERVAL`, `QUEUES`, `TIMEOUT` and `ONCE`. Phase 9's cron container reuses it, with a second loop set to `QUEUES=ai`.
 - **Known gap:** if `publishDueDrops` crashes between its writes and queueing the follow-ups, the follow-ups are lost. The window is tiny, and pages self-heal when the cache expires.
 
-## Phase 4 — Design system  (direction: Hybrid · brand: D/M monogram · mockup approval pending)
+## Phase 4 — Design system  (direction: Hybrid · brand: D/M monogram)
 
 > **How this serves the primary goal:** the drop has to look like a drop: an unmistakable hero, a countdown that builds anticipation, and deal cards that show the real discount at a glance on a phone.
 
@@ -610,6 +610,24 @@ Also confirm the chosen search API's endpoints, result format, terms and pricing
 - No reading `Date.now()` during render.
 - No `priority` prop.
 - No `tailwind.config.js` (CSS-first config).
+
+**Outcome (2026-11-21): done.** Built from the Hybrid mockup, which is archived in `plans/design/`. The user hasn't formally reviewed the mockup; they asked for the phases to run without waiting, so `/styleguide` is ready for their review. Lint is back to `error` for both React hooks rules. axe finds no serious or critical issues on `/styleguide` at phone and desktop sizes, in light and dark modes. Deviations and notes for later phases:
+- **Radix stays, not Base UI.** `cn` stays in `src/utilities/ui.ts`, because the `cn` package has the same API. `tailwind.config.mjs` is removed.
+- **Dark mode:**
+  - Tokens sit on `[data-theme]`. With no choice saved, it follows `prefers-color-scheme`.
+  - A footer toggle stores `localStorage['dm-theme']`, and an inline head script restores it before paint.
+  - The header, hero band and newsletter block force `data-theme="dark"`.
+- **"Price checked"** renders an absolute time (`Nov 21, 9:14 AM ET`), so cached pages never show a stale "2 hours ago".
+- **Countdown:**
+  - Server ISO target in `<time dateTime>`, with readable text when JavaScript is off.
+  - `role="timer"`, so ticks are never announced.
+  - `router.refresh()` 5 s after zero, at most 4 retries per target.
+  - **Pages must pass `getNextDropAt(...)` as the target, and their cache must expire at the drop.**
+- **`DealCta` is a plain `<a href="/go/<id>" rel="sponsored nofollow">`, never `next/link`**, because a prefetch would log a fake click.
+- **`NewsletterCta`** posts JSON from JavaScript but falls back to a native form POST, **so Phase 7's `/api/subscribe` must accept JSON and form-encoded bodies.** The honeypot field is `website`.
+- **Red `#C8102E`** is used only as a background with white text. Red text on ink fails WCAG AA.
+- **`/styleguide`** is `noindex` and returns 404 in production. Phase 6 should also disallow it in robots.txt.
+- **Lighthouse not run yet.** It needs the real home page, so it moves to Phase 5 verification.
 
 ## Phase 5 — Public pages
 
